@@ -1,8 +1,9 @@
+import "@/App.css";
+import { TitleBar } from "@/components/TitleBar";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
-import "./App.css";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
@@ -13,28 +14,30 @@ function App() {
   }
 
   return (
-    <main>
-      <h1>DAO Toolkit</h1>
-      <p>
-        An easy-to-use desktop application for managing your{" "}
-        <strong>Dragon Age: Origins</strong> mods.
-      </p>
+    <>
+      <TitleBar />
+      <main className="mt-8 p-4">
+        <p>
+          An easy-to-use desktop application for managing your{" "}
+          <strong>Dragon Age: Origins</strong> mods.
+        </p>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            greet();
+          }}
+        >
+          <input
+            id="greet-input"
+            onChange={(e) => setName(e.currentTarget.value)}
+            placeholder="Enter a name..."
+          />
+          <button type="submit">Greet</button>
+        </form>
+        <p>{greetMsg}</p>
+      </main>
+    </>
   );
 }
 
