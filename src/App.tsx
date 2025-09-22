@@ -1,6 +1,7 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
 import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
 import "./App.css";
 
 function App() {
@@ -8,29 +9,18 @@ function App() {
   const [name, setName] = useState("");
 
   async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     setGreetMsg(await invoke("greet", { name }));
   }
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+    <main>
+      <h1>DAO Toolkit</h1>
+      <p>
+        An easy-to-use desktop application for managing your{" "}
+        <strong>Dragon Age: Origins</strong> mods.
+      </p>
 
       <form
-        className="row"
         onSubmit={(e) => {
           e.preventDefault();
           greet();
