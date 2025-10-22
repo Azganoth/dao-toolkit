@@ -1,42 +1,41 @@
 import "@/App.css";
+import { Settings } from "@/components/Settings";
 import { TitleBar } from "@/components/TitleBar";
+import { Toaster } from "@/components/ui/Sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
-import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
+import { SearchXIcon, SettingsIcon, UserCheckIcon } from "lucide-react";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-
-  async function greet() {
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
   return (
     <>
       <TitleBar />
       <main className="mt-8 p-4">
-        <p>
-          An easy-to-use desktop application for managing your{" "}
-          <strong>Dragon Age: Origins</strong> mods.
-        </p>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            greet();
-          }}
-        >
-          <input
-            id="greet-input"
-            onChange={(e) => setName(e.currentTarget.value)}
-            placeholder="Enter a name..."
-          />
-          <button type="submit">Greet</button>
-        </form>
-        <p>{greetMsg}</p>
+        <Tabs defaultValue="settings">
+          <TabsList className="w-full">
+            <TabsTrigger value="chargen">
+              <UserCheckIcon />
+              <h2>Chargen</h2>
+            </TabsTrigger>
+            <TabsTrigger value="scanner" disabled>
+              <SearchXIcon />
+              <h2>Scanner</h2>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="ml-auto">
+              <SettingsIcon />
+              <h2>Settings</h2>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="chargen" className="p-4">
+            TODO
+          </TabsContent>
+          <TabsContent value="settings" className="p-4">
+            <Settings />
+          </TabsContent>
+        </Tabs>
       </main>
+      <Toaster />
     </>
   );
 }

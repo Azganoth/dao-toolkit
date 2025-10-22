@@ -19,7 +19,9 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_decorum::init())
+        .plugin(tauri_plugin_zustand::init())
         .setup(|app| {
             // Create custom title bar
             let main_window = app.get_webview_window("main").unwrap();

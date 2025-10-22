@@ -1,5 +1,0 @@
-{
-  "identifier": "desktop-capability",
-  "windows": ["main"],
-  "permissions": ["window-state:default"]
-}
