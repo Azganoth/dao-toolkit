@@ -40,7 +40,7 @@ import { useDataStore } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
 import { setTheme as tauriSetTheme } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
-import { MoonIcon, SunIcon } from "lucide-react";
+import { MoonIcon, RotateCcwIcon, SunIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -51,7 +51,7 @@ function Settings() {
   const selectFolder = async () => {
     const path = await open({
       directory: true,
-      defaultPath: overridePath,
+      defaultPath: overridePath ?? undefined,
     });
     if (!path) return;
 
@@ -72,14 +72,24 @@ function Settings() {
     tauriSetTheme(theme === "system" ? null : theme);
   }, [theme]);
 
-  // Delete
+  // Reset Settings
+  const resetSettings = useSettingsStore((state) => state.reset);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+
+  const handleResetSettings = async () => {
+    setResetDialogOpen(false);
+    resetSettings();
+    toast.success("Settings have been reset to their defaults.");
+  };
+
+  // Delete Data
   const resetData = useDataStore((state) => state.reset);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const deleteData = async () => {
+  const handleDeleteData = async () => {
     setDeleteDialogOpen(false);
     resetData();
-    toast.success("All app data deleted");
+    toast.success("All application data has been deleted.");
   };
 
   return (
@@ -97,12 +107,12 @@ function Settings() {
             <InputGroup className="flex-1">
               <InputGroupInput
                 type="text"
-                value={overridePath || ""}
+                value={overridePath ?? ""}
                 onChange={(e) => setOverridePath(e.target.value)}
               />
               <InputGroupAddon align="inline-end">
                 <InputGroupButton onClick={selectFolder}>
-                  Select
+                  Browse
                 </InputGroupButton>
               </InputGroupAddon>
             </InputGroup>
@@ -145,10 +155,55 @@ function Settings() {
           <div className="grid grid-cols-2 gap-8">
             <Item variant="outline">
               <ItemContent>
-                <ItemTitle>Delete app data</ItemTitle>
+                <ItemTitle>
+                  <RotateCcwIcon className="size-4" />
+                  Reset Settings
+                </ItemTitle>
                 <ItemDescription>
-                  This will permanently delete all application data except
-                  settings. This action cannot be undone.
+                  Restores all settings to their default values.
+                </ItemDescription>
+              </ItemContent>
+              <ItemActions>
+                <Dialog
+                  open={resetDialogOpen}
+                  onOpenChange={setResetDialogOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      Reset
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Are you sure you want to reset?</DialogTitle>
+                      <DialogDescription>
+                        All settings will be restored to their defaults. This
+                        action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
+                      <Button
+                        variant="destructive"
+                        onClick={handleResetSettings}
+                      >
+                        RESET
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </ItemActions>
+            </Item>
+            <Item variant="outline">
+              <ItemContent>
+                <ItemTitle>
+                  <Trash2Icon className="size-4" />
+                  Delete App Data
+                </ItemTitle>
+                <ItemDescription>
+                  Permanently deletes all application data.
                 </ItemDescription>
               </ItemContent>
               <ItemActions>
@@ -163,17 +218,20 @@ function Settings() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                      <DialogTitle>Delete data</DialogTitle>
+                      <DialogTitle>
+                        Are you sure you want to delete all data?
+                      </DialogTitle>
                       <DialogDescription>
-                        This will permanently delete all application data except
-                        settings. This action cannot be undone.
+                        This will permanently delete all application data,
+                        including resolved conflict lists. Your settings will
+                        not be affected. This action cannot be undone.
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                       <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                       </DialogClose>
-                      <Button variant="destructive" onClick={deleteData}>
+                      <Button variant="destructive" onClick={handleDeleteData}>
                         DELETE ALL DATA
                       </Button>
                     </DialogFooter>

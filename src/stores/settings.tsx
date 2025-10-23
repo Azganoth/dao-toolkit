@@ -4,16 +4,18 @@ import { immer } from "zustand/middleware/immer";
 
 interface SettingsStore {
   theme: "light" | "dark" | "system";
-  overridePath?: string;
+  overridePath: string | null;
 
   setTheme: (theme: SettingsStore["theme"]) => void;
   setOverridePath: (path: SettingsStore["overridePath"]) => void;
+
+  reset: () => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
-  immer((set) => ({
+  immer((set, _, store) => ({
     theme: "system",
-    overridePath: undefined,
+    overridePath: null,
 
     setTheme: (theme) =>
       set((state) => {
@@ -23,6 +25,8 @@ export const useSettingsStore = create<SettingsStore>()(
       set((state) => {
         state.overridePath = path;
       }),
+
+    reset: () => set(() => store.getInitialState()),
   })),
 );
 
