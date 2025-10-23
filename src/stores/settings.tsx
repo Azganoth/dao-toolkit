@@ -23,7 +23,7 @@ async function getDefaultOverridePath() {
   return null;
 }
 
-interface SettingsStore {
+export interface SettingsStore {
   theme: "light" | "dark" | "system";
   overridePath: string | null;
 

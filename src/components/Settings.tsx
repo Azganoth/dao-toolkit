@@ -38,10 +38,9 @@ import { ScrollArea } from "@/components/ui/ScrollArea";
 import { Separator } from "@/components/ui/Separator";
 import { useDataStore } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
-import { setTheme as tauriSetTheme } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
 import { MoonIcon, RotateCcwIcon, SunIcon, Trash2Icon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 function Settings() {
@@ -59,18 +58,7 @@ function Settings() {
   };
 
   // Theme
-  const theme = useSettingsStore((state) => state.theme);
   const setTheme = useSettingsStore((state) => state.setTheme);
-
-  useEffect(() => {
-    const isDark =
-      theme === "system"
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        : theme === "dark";
-    window.document.documentElement.classList.toggle("dark", isDark);
-
-    tauriSetTheme(theme === "system" ? null : theme);
-  }, [theme]);
 
   // Reset Settings
   const resetSettings = useSettingsStore((state) => state.reset);

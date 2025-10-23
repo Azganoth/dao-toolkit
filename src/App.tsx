@@ -4,12 +4,27 @@ import { TitleBar } from "@/components/TitleBar";
 import { Toaster } from "@/components/ui/Sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { dataStoreTauriHandler } from "@/stores/data";
-import { settingsStoreTauriHandler, useSettingsStore } from "@/stores/settings";
+import {
+  settingsStoreTauriHandler,
+  useSettingsStore,
+  type SettingsStore,
+} from "@/stores/settings";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
+import { setTheme as tauriSetTheme } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { SearchXIcon, SettingsIcon, UserCheckIcon } from "lucide-react";
 import { useEffect } from "react";
+
+const updateTheme = async (theme: SettingsStore["theme"]) => {
+  await tauriSetTheme(theme === "system" ? null : theme);
+
+  const isDark =
+    theme === "system"
+      ? (await getCurrentWindow().theme()) === "dark"
+      : theme === "dark";
+  window.document.documentElement.classList.toggle("dark", isDark);
+};
 
 function App() {
   useEffect(() => {
@@ -18,12 +33,19 @@ function App() {
       await dataStoreTauriHandler.start();
 
       await useSettingsStore.getState().init();
+      updateTheme(useSettingsStore.getState().theme);
 
       await getCurrentWindow().show();
     };
 
     initializeApp();
   }, []);
+
+  const theme = useSettingsStore((state) => state.theme);
+
+  useEffect(() => {
+    updateTheme(theme);
+  }, [theme]);
 
   return (
     <>
