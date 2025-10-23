@@ -3,6 +3,9 @@
   "identifier": "window",
   "windows": ["main"],
   "permissions": [
+    "core:window:allow-show",
+    "core:window:allow-hide",
+
     "window-state:default",
 
     "core:window:allow-close",

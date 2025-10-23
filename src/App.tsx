@@ -3,11 +3,26 @@ import { Settings } from "@/components/Settings";
 import { TitleBar } from "@/components/TitleBar";
 import { Toaster } from "@/components/ui/Sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { dataStoreTauriHandler } from "@/stores/data";
+import { settingsStoreTauriHandler } from "@/stores/settings";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { SearchXIcon, SettingsIcon, UserCheckIcon } from "lucide-react";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    const initializeApp = async () => {
+      await settingsStoreTauriHandler.start();
+      await dataStoreTauriHandler.start();
+
+      await getCurrentWindow().show();
+    };
+
+    initializeApp();
+  }, []);
+
   return (
     <>
       <TitleBar />

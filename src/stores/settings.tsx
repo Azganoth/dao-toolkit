@@ -26,7 +26,8 @@ export const useSettingsStore = create<SettingsStore>()(
   })),
 );
 
-// @ts-expect-error
-createTauriStore("settings", useSettingsStore, {
-  autoStart: true,
-});
+export const settingsStoreTauriHandler = createTauriStore(
+  "settings",
+  // @ts-expect-error
+  useSettingsStore,
+);
