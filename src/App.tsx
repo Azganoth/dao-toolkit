@@ -4,7 +4,7 @@ import { TitleBar } from "@/components/TitleBar";
 import { Toaster } from "@/components/ui/Sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { dataStoreTauriHandler } from "@/stores/data";
-import { settingsStoreTauriHandler } from "@/stores/settings";
+import { settingsStoreTauriHandler, useSettingsStore } from "@/stores/settings";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -16,6 +16,8 @@ function App() {
     const initializeApp = async () => {
       await settingsStoreTauriHandler.start();
       await dataStoreTauriHandler.start();
+
+      await useSettingsStore.getState().init();
 
       await getCurrentWindow().show();
     };
