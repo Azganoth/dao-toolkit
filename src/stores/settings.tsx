@@ -77,4 +77,7 @@ export const settingsStoreTauriHandler = createTauriStore(
   "settings",
   // @ts-expect-error
   useSettingsStore,
+  {
+    saveOnChange: true,
+  },
 );

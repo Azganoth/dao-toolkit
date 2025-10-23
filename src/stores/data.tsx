@@ -23,4 +23,6 @@ export const useDataStore = create<Data>()(
 );
 
 // @ts-expect-error
-export const dataStoreTauriHandler = createTauriStore("data", useDataStore);
+export const dataStoreTauriHandler = createTauriStore("data", useDataStore, {
+  saveOnChange: true,
+});
