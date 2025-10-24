@@ -63,15 +63,15 @@ function App() {
           <TabsList className="w-full flex-none">
             <TabsTrigger value="chargen">
               <UserCheckIcon />
-              <h2>Chargen</h2>
+              Chargen
             </TabsTrigger>
             <TabsTrigger value="scanner" disabled>
               <SearchXIcon />
-              <h2>Scanner</h2>
+              Scanner
             </TabsTrigger>
             <TabsTrigger value="settings" className="ml-auto">
               <SettingsIcon />
-              <h2>Settings</h2>
+              Settings
             </TabsTrigger>
           </TabsList>
           <motion.div
