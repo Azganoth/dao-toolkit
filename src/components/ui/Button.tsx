@@ -3,9 +3,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all duration-200 ease-out outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.98] active:duration-0 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all duration-200 ease-out outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-98 active:duration-0 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -36,7 +37,7 @@ const buttonVariants = cva(
   },
 );
 
-function Button({
+function BaseButton({
   className,
   variant,
   size,
@@ -57,4 +58,22 @@ function Button({
   );
 }
 
-export { Button, buttonVariants };
+const MotionButton = motion.create(BaseButton);
+
+function Button({
+  ...props
+}: React.ComponentProps<typeof MotionButton> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+  }) {
+  return (
+    <MotionButton
+      {...(props.variant !== "link" && {
+        whileTap: { scale: 0.98, transition: { duration: 0.1 } },
+      })}
+      {...props}
+    />
+  );
+}
+
+export { BaseButton, Button, buttonVariants };

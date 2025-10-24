@@ -82,6 +82,10 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  ::selection {
+    @apply bg-primary/60 text-foreground;
+  }
 }
 
 @layer components {

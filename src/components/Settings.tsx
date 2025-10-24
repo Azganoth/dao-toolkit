@@ -36,8 +36,21 @@ import {
   SunIcon,
   Trash2Icon,
 } from "lucide-react";
+import { motion, stagger, type Variants } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+const revealVariants: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut",
+    },
+  },
+};
 
 function Settings() {
   const overridePath = useSettingsStore((state) => state.overridePath);
@@ -77,10 +90,25 @@ function Settings() {
     toast.success("All application data has been deleted.");
   };
 
+  const themes: {
+    value: typeof theme;
+    label: string;
+    Icon: React.JSXElementConstructor<any>;
+  }[] = [
+    { value: "light", label: "Light", Icon: SunIcon },
+    { value: "dark", label: "Dark", Icon: MoonIcon },
+    { value: "system", label: "System", Icon: LaptopIcon },
+  ];
+
   return (
-    <div className="mx-auto flex max-w-[800px] flex-col gap-10 pb-10">
+    <motion.div
+      className="mx-auto flex max-w-[800px] flex-col gap-10 pb-10"
+      transition={{ delayChildren: stagger(0.15) }}
+      initial="hidden"
+      animate="visible"
+    >
       {/* File System Section */}
-      <section className="space-y-4">
+      <motion.section className="space-y-4" variants={revealVariants}>
         <Overline>File System</Overline>
         <Card>
           <Field>
@@ -106,10 +134,10 @@ function Settings() {
             </InputGroup>
           </Field>
         </Card>
-      </section>
+      </motion.section>
 
       {/* Interface Section */}
-      <section className="space-y-4">
+      <motion.section className="space-y-4" variants={revealVariants}>
         <Overline>Interface</Overline>
         <Card>
           <Field orientation="horizontal">
@@ -120,52 +148,28 @@ function Settings() {
               </FieldDescription>
             </FieldContent>
             <div className="flex items-center rounded-md border p-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "rounded-none px-3 first:rounded-l-sm last:rounded-r-sm",
-                  theme === "light" &&
-                    "bg-background text-foreground shadow-sm not-dark:text-primary",
-                )}
-                onClick={() => setTheme("light")}
-              >
-                <SunIcon className="size-4" />
-                Light
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "rounded-none px-3 first:rounded-l-sm last:rounded-r-sm",
-                  theme === "system" &&
-                    "bg-background text-foreground shadow-sm not-dark:text-primary",
-                )}
-                onClick={() => setTheme("system")}
-              >
-                <LaptopIcon className="size-4" />
-                System
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "rounded-none px-3 first:rounded-l-sm last:rounded-r-sm",
-                  theme === "dark" &&
-                    "bg-background text-foreground shadow-sm not-dark:text-primary",
-                )}
-                onClick={() => setTheme("dark")}
-              >
-                <MoonIcon className="size-4" />
-                Dark
-              </Button>
+              {themes.map(({ value, label, Icon }) => (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "rounded-none px-3 first:rounded-l-sm last:rounded-r-sm",
+                    theme === value &&
+                      "text-primary shadow-sm hover:text-primary",
+                  )}
+                  onClick={() => setTheme(value)}
+                >
+                  <Icon className="size-4" />
+                  {label}
+                </Button>
+              ))}
             </div>
           </Field>
         </Card>
-      </section>
+      </motion.section>
 
       {/* Data Management Section (Danger Zone) */}
-      <section className="space-y-4">
+      <motion.section className="space-y-4" variants={revealVariants}>
         <Overline className="text-destructive">Data Management</Overline>
         <Card className="border-destructive/20 bg-destructive/5">
           {/* Reset Settings */}
@@ -173,7 +177,7 @@ function Settings() {
             <FieldContent>
               <FieldLabel>Reset Settings</FieldLabel>
               <FieldDescription>
-                Restore default configuration. Your scan data will be preserved.
+                Restore default configuration.
               </FieldDescription>
             </FieldContent>
             <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
@@ -210,7 +214,7 @@ function Settings() {
             <FieldContent>
               <FieldLabel>Clear App Data</FieldLabel>
               <FieldDescription>
-                Permanently remove all cached scan results and temporary files.
+                Permanently remove all cached data and temporary files.
               </FieldDescription>
             </FieldContent>
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -240,8 +244,8 @@ function Settings() {
             </Dialog>
           </Field>
         </Card>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   );
 }
 

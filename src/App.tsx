@@ -15,8 +15,7 @@ import "@fontsource-variable/jetbrains-mono";
 import { setTheme as tauriSetTheme } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { SearchXIcon, SettingsIcon, UserCheckIcon } from "lucide-react";
-import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 const updateTheme = async (theme: SettingsStore["theme"]) => {
   await tauriSetTheme(theme === "system" ? null : theme);
@@ -49,16 +48,13 @@ function App() {
     updateTheme(theme);
   }, [theme]);
 
-  const [activeTab, setActiveTab] = useState("settings");
-
   return (
     <div className="flex h-screen flex-col">
       <TitleBar />
       <main className="mt-8 flex-1 overflow-hidden p-4">
         <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="flex h-full w-full flex-col"
+          className="flex h-full w-full flex-col gap-4"
+          defaultValue="settings"
         >
           <TabsList className="w-full flex-none">
             <TabsTrigger value="chargen">
@@ -74,21 +70,12 @@ function App() {
               Settings
             </TabsTrigger>
           </TabsList>
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="flex-1 overflow-hidden p-4"
-          >
-            <ScrollArea className="h-full w-full">
-              <TabsContent value="chargen">TODO</TabsContent>
-              <TabsContent value="settings">
-                <Settings />
-              </TabsContent>
-            </ScrollArea>
-          </motion.div>
+          <ScrollArea className="h-full w-full overflow-hidden px-4 pb-4">
+            <TabsContent value="chargen">TODO</TabsContent>
+            <TabsContent value="settings">
+              <Settings />
+            </TabsContent>
+          </ScrollArea>
         </Tabs>
       </main>
       <Toaster />
