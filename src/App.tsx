@@ -1,9 +1,9 @@
 import "@/App.css";
-import { Settings } from "@/components/Settings";
-import { TitleBar } from "@/components/TitleBar";
+import { TitleBar } from "@/components/layout/TitleBar";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { Toaster } from "@/components/ui/Sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { Settings } from "@/features/settings/Settings";
 import { dataStoreTauriHandler } from "@/stores/data";
 import {
   settingsStoreTauriHandler,
