@@ -26,9 +26,11 @@ async function getDefaultOverridePath() {
 export interface SettingsStore {
   theme: "light" | "dark" | "system";
   overridePath: string | null;
+  reduceMotion: boolean;
 
   setTheme: (theme: SettingsStore["theme"]) => void;
   setOverridePath: (path: SettingsStore["overridePath"]) => void;
+  setReduceMotion: (value: boolean) => void;
 
   reset: () => void;
   init: () => Promise<void>;
@@ -38,6 +40,7 @@ export const useSettingsStore = create<SettingsStore>()(
   immer((set, get, store) => ({
     theme: "system",
     overridePath: null,
+    reduceMotion: false,
 
     setTheme: (theme) =>
       set((state) => {
@@ -46,6 +49,10 @@ export const useSettingsStore = create<SettingsStore>()(
     setOverridePath: (path) =>
       set((state) => {
         state.overridePath = path;
+      }),
+    setReduceMotion: (value) =>
+      set((state) => {
+        state.reduceMotion = value;
       }),
 
     reset: async () => {

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Checkbox } from "@/components/ui/Checkbox";
 import {
   Dialog,
   DialogClose,
@@ -66,9 +67,12 @@ function Settings() {
     setOverridePath(path);
   };
 
-  // Theme
+  // Appearance
   const theme = useSettingsStore((state) => state.theme);
   const setTheme = useSettingsStore((state) => state.setTheme);
+
+  const reduceMotion = useSettingsStore((state) => state.reduceMotion);
+  const setReduceMotion = useSettingsStore((state) => state.setReduceMotion);
 
   // Reset Settings
   const resetSettings = useSettingsStore((state) => state.reset);
@@ -164,6 +168,20 @@ function Settings() {
                 </Button>
               ))}
             </div>
+          </Field>
+          <Field orientation="horizontal">
+            <FieldContent>
+              <FieldLabel htmlFor="settings-reduced-motion">
+                Reduced Motion
+              </FieldLabel>
+              <FieldDescription>Reduce motion for animations.</FieldDescription>
+            </FieldContent>
+            <Checkbox
+              id="settings-reduced-motion"
+              size="lg"
+              checked={reduceMotion}
+              onCheckedChange={setReduceMotion}
+            />
           </Field>
         </Card>
       </motion.section>

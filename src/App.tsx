@@ -15,6 +15,7 @@ import "@fontsource-variable/jetbrains-mono";
 import { setTheme as tauriSetTheme } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { SearchXIcon, SettingsIcon, UserCheckIcon } from "lucide-react";
+import { MotionConfig } from "motion/react";
 import { useEffect } from "react";
 
 const updateTheme = async (theme: SettingsStore["theme"]) => {
@@ -43,43 +44,46 @@ function App() {
   }, []);
 
   const theme = useSettingsStore((state) => state.theme);
+  const reduceMotion = useSettingsStore((state) => state.reduceMotion);
 
   useEffect(() => {
     updateTheme(theme);
   }, [theme]);
 
   return (
-    <div className="flex h-screen flex-col">
-      <TitleBar />
-      <main className="mt-8 flex-1 overflow-hidden p-4">
-        <Tabs
-          className="flex h-full w-full flex-col gap-4"
-          defaultValue="settings"
-        >
-          <TabsList className="w-full flex-none">
-            <TabsTrigger value="chargen">
-              <UserCheckIcon />
-              Chargen
-            </TabsTrigger>
-            <TabsTrigger value="scanner" disabled>
-              <SearchXIcon />
-              Scanner
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="ml-auto">
-              <SettingsIcon />
-              Settings
-            </TabsTrigger>
-          </TabsList>
-          <ScrollArea className="h-full w-full overflow-hidden px-4 pb-4">
-            <TabsContent value="chargen">TODO</TabsContent>
-            <TabsContent value="settings">
-              <Settings />
-            </TabsContent>
-          </ScrollArea>
-        </Tabs>
-      </main>
-      <Toaster />
-    </div>
+    <MotionConfig reducedMotion={reduceMotion ? "always" : "user"}>
+      <div className="flex h-screen flex-col">
+        <TitleBar />
+        <main className="mt-8 flex-1 overflow-hidden p-4">
+          <Tabs
+            className="flex h-full w-full flex-col gap-4"
+            defaultValue="settings"
+          >
+            <TabsList className="w-full flex-none">
+              <TabsTrigger value="chargen">
+                <UserCheckIcon />
+                Chargen
+              </TabsTrigger>
+              <TabsTrigger value="scanner" disabled>
+                <SearchXIcon />
+                Scanner
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="ml-auto">
+                <SettingsIcon />
+                Settings
+              </TabsTrigger>
+            </TabsList>
+            <ScrollArea className="h-full w-full overflow-hidden px-4 pb-4">
+              <TabsContent value="chargen">TODO</TabsContent>
+              <TabsContent value="settings">
+                <Settings />
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
+        </main>
+        <Toaster />
+      </div>
+    </MotionConfig>
   );
 }
 
