@@ -117,13 +117,16 @@ function Settings() {
         <Card>
           <Field>
             <FieldContent>
-              <FieldLabel>Override Directory</FieldLabel>
+              <FieldLabel htmlFor="settings-override-path">
+                Override Directory
+              </FieldLabel>
               <FieldDescription>
                 The location where your Dragon Age: Origins mods are installed.
               </FieldDescription>
             </FieldContent>
             <InputGroup>
               <InputGroupInput
+                id="settings-override-path"
                 type="text"
                 value={overridePath ?? ""}
                 placeholder="Select your Dragon Age override folder..."
@@ -171,13 +174,13 @@ function Settings() {
           </Field>
           <Field orientation="horizontal">
             <FieldContent>
-              <FieldLabel htmlFor="settings-reduced-motion">
+              <FieldLabel htmlFor="settings-reduce-motion">
                 Reduced Motion
               </FieldLabel>
               <FieldDescription>Reduce motion for animations.</FieldDescription>
             </FieldContent>
             <Checkbox
-              id="settings-reduced-motion"
+              id="settings-reduce-motion"
               size="lg"
               checked={reduceMotion}
               onCheckedChange={setReduceMotion}
@@ -193,24 +196,25 @@ function Settings() {
           {/* Reset Settings */}
           <Field orientation="horizontal">
             <FieldContent>
-              <FieldLabel>Reset Settings</FieldLabel>
+              <FieldLabel>Restore Defaults</FieldLabel>
               <FieldDescription>
-                Restore default configuration.
+                Revert your theme, override directory, and accessibility
+                preferences.
               </FieldDescription>
             </FieldContent>
             <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="py-5">
                   <RotateCcwIcon className="size-4" />
-                  Reset Settings
+                  Reset
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>Reset all settings?</DialogTitle>
                   <DialogDescription>
-                    This will revert your theme and directory preferences to
-                    default.
+                    This will revert your theme, override directory, and
+                    accessibility preferences.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -230,9 +234,9 @@ function Settings() {
           {/* Delete Data */}
           <Field orientation="horizontal">
             <FieldContent>
-              <FieldLabel>Clear App Data</FieldLabel>
+              <FieldLabel>Clear Application Data</FieldLabel>
               <FieldDescription>
-                Permanently remove all cached data and temporary files.
+                Permanently remove all scanned asset data and temporary files.
               </FieldDescription>
             </FieldContent>
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
