@@ -82,8 +82,7 @@ export const useSettingsStore = create<SettingsStore>()(
 
 export const settingsStoreTauriHandler = createTauriStore(
   "settings",
-  // @ts-expect-error
-  useSettingsStore,
+  useSettingsStore as never,
   {
     saveOnChange: true,
   },

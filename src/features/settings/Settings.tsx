@@ -36,6 +36,7 @@ import {
   RotateCcwIcon,
   SunIcon,
   Trash2Icon,
+  type LucideProps,
 } from "lucide-react";
 import { motion, stagger, type Variants } from "motion/react";
 import { useState } from "react";
@@ -97,7 +98,7 @@ function Settings() {
   const themes: {
     value: typeof theme;
     label: string;
-    Icon: React.JSXElementConstructor<any>;
+    Icon: React.JSXElementConstructor<LucideProps>;
   }[] = [
     { value: "light", label: "Light", Icon: SunIcon },
     { value: "dark", label: "Dark", Icon: MoonIcon },
@@ -157,6 +158,7 @@ function Settings() {
             <div className="flex items-center rounded-md border p-1">
               {themes.map(({ value, label, Icon }) => (
                 <Button
+                  key={value}
                   variant="ghost"
                   size="sm"
                   className={cn(
