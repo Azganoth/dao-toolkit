@@ -3,6 +3,7 @@ import { TitleBar } from "@/components/layout/TitleBar";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { Toaster } from "@/components/ui/Sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { ChargenGenerator } from "@/features/chargen/ChargenGenerator";
 import { Settings } from "@/features/settings/Settings";
 import { dataStoreTauriHandler } from "@/stores/data";
 import {
@@ -74,7 +75,9 @@ function App() {
               </TabsTrigger>
             </TabsList>
             <ScrollArea className="h-full w-full overflow-hidden px-4 pb-4">
-              <TabsContent value="chargen">TODO</TabsContent>
+              <TabsContent value="chargen">
+                <ChargenGenerator />
+              </TabsContent>
               <TabsContent value="settings">
                 <Settings />
               </TabsContent>

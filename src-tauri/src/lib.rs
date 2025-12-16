@@ -1,17 +1,26 @@
-use tauri::Manager;
+use std::{path::PathBuf, sync::Mutex};
 
+use tauri::Manager;
 use tauri_plugin_decorum::WebviewWindowExt;
 use tauri_plugin_window_state::StateFlags;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+use crate::core::chargen::Chargen;
+
+mod commands;
+mod core;
+
+#[derive(Default)]
+pub struct ChargenContext {
+    pub data: Option<Chargen>,
+    pub path: Option<PathBuf>,
 }
+
+pub struct ChargenState(pub Mutex<ChargenContext>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(ChargenState(Mutex::new(ChargenContext::default())))
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
                 .get_webview_window("main")
@@ -35,7 +44,11 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![
+            commands::scan_for_chargen_assets,
+            commands::generate_chargen_file,
+            commands::delete_all_chargen_files,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
