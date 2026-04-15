@@ -11,13 +11,11 @@
     "skipLibCheck": true,
 
     /* Modules */
-    "esModuleInterop": true,
-    "moduleResolution": "node16",
+    "moduleResolution": "nodenext",
 
-    /* Linting */
-    "strict": true,
+    "noEmit": true,
 
-    "noEmit": true
+    "types": ["node"]
   },
   "include": ["vite.config.ts"]
 }

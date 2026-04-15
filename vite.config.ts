@@ -5,7 +5,6 @@ import { defineConfig } from "vite";
 
 const host = process.env.TAURI_DEV_HOST;
 
-// https://vite.dev/config/
 export default defineConfig(async () => ({
   resolve: {
     alias: {
@@ -27,6 +26,24 @@ export default defineConfig(async () => ({
       : undefined,
     watch: {
       ignored: ["**/src-tauri/**"],
+    },
+  },
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: "react-vendor",
+              test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+            },
+            {
+              name: "ui-vendor",
+              test: /[\\/]node_modules[\\/](lucide-react|motion|@radix-ui)[\\/]/,
+            },
+          ],
+        },
+      },
     },
   },
 }));
