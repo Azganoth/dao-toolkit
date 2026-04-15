@@ -98,7 +98,7 @@ function ChargenGenerator() {
   const isBusy = status === "scanning" || status === "generating";
 
   return (
-    <div className="mx-auto flex max-w-[800px] flex-col gap-8 pb-8">
+    <div className="mx-auto flex max-w-200 flex-col gap-8 pb-8">
       {/* Toolbar */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

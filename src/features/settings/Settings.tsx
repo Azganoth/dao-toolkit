@@ -107,7 +107,7 @@ function Settings() {
 
   return (
     <motion.div
-      className="mx-auto flex max-w-[800px] flex-col gap-10 pb-10"
+      className="mx-auto flex max-w-200 flex-col gap-10 pb-10"
       transition={{ delayChildren: stagger(0.15) }}
       initial="hidden"
       animate="visible"
@@ -211,7 +211,7 @@ function Settings() {
                   Reset
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-106.25">
                 <DialogHeader>
                   <DialogTitle>Reset all settings?</DialogTitle>
                   <DialogDescription>
@@ -248,7 +248,7 @@ function Settings() {
                   Clear Data
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-106.25">
                 <DialogHeader>
                   <DialogTitle>Clear all application data?</DialogTitle>
                   <DialogDescription>
