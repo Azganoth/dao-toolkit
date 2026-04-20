@@ -14,8 +14,14 @@ use crate::core::xml::{write_declaration, write_leaf, write_list, write_tag};
 /* Scan */
 
 pub fn scan_from_path(path: &Path) -> Result<(Chargen, ChargenStats, ChargenManifest)> {
+    let metadata = fs::metadata(path)
+        .with_context(|| format!("Failed to read override directory '{}'", path.display()))?;
+    if !metadata.is_dir() {
+        anyhow::bail!("Override path is not a directory: {}", path.display());
+    }
+
     let mut custom_chargen = Chargen::default();
-    scan_directory(&mut custom_chargen, path);
+    scan_directory(&mut custom_chargen, path)?;
 
     let manifest = ChargenManifest::from_chargen(&custom_chargen);
 
@@ -27,24 +33,30 @@ pub fn scan_from_path(path: &Path) -> Result<(Chargen, ChargenStats, ChargenMani
     Ok((total_chargen, total_stats, manifest))
 }
 
-fn scan_directory(chargen: &mut Chargen, override_dir: &Path) {
-    WalkDir::new(override_dir)
+fn scan_directory(chargen: &mut Chargen, override_dir: &Path) -> Result<()> {
+    for entry in WalkDir::new(override_dir)
         .into_iter()
-        .filter_map(Result::ok)
-        .filter(|e| e.file_type().is_file())
-        .for_each(|entry| {
-            let path = entry.path();
+        .filter_entry(|entry| !is_ignored_chargen_path(entry.path()))
+    {
+        let entry = entry
+            .with_context(|| format!("Failed to read path under '{}'", override_dir.display()))?;
+        if !entry.file_type().is_file() {
+            continue;
+        }
 
-            if path.to_string_lossy().contains("#ignorechargen") {
-                return;
-            }
+        let path = entry.path();
+        let Some(resource) = path.file_name().and_then(|s| s.to_str()) else {
+            continue;
+        };
 
-            let Some(resource) = path.file_name().and_then(|s| s.to_str()) else {
-                return;
-            };
+        process_resource(chargen, resource, path);
+    }
 
-            process_resource(chargen, resource, path);
-        });
+    Ok(())
+}
+
+fn is_ignored_chargen_path(path: &Path) -> bool {
+    path.to_string_lossy().contains("#ignorechargen")
 }
 
 fn process_resource(chargen: &mut Chargen, resource: &str, path: &Path) {
