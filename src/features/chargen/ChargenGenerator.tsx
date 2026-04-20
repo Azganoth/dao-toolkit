@@ -4,6 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
+import { H3, H4, Muted, P } from "@/components/ui/Typography";
 import { useChargenStore } from "@/features/chargen/stores/chargen";
 import { overridePathGuard } from "@/lib/utils";
 import { useDataStore } from "@/stores/data";
@@ -170,16 +171,16 @@ function ChargenGenerator() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Delete existing chargenmorphcfg.xml files</p>
+              <Muted>Delete existing chargenmorphcfg.xml files</Muted>
             </TooltipContent>
           </Tooltip>
         </div>
 
-        <p className="text-sm text-muted-foreground max-sm:px-2">
+        <P className="text-muted-foreground max-sm:px-2">
           {currentScanTime && (
             <span>Last scan: {currentScanTime.toLocaleString()}</span>
           )}
-        </p>
+        </P>
       </motion.div>
 
       {/* Content Section */}
@@ -192,7 +193,7 @@ function ChargenGenerator() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <h2 className="mb-4 text-center text-lg font-bold">Scan results</h2>
+            <H3 className="mb-4 text-center">Scan results</H3>
             <ChargenResults stats={stats} manifest={manifest} />
           </motion.div>
         ) : (
@@ -208,10 +209,10 @@ function ChargenGenerator() {
               <Wand2Icon className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="max-w-xs text-center">
-              <h3 className="mb-4 font-medium">No Assets Loaded</h3>
-              <p className="text-sm text-muted-foreground">
+              <H4 className="mb-2">No Assets Loaded</H4>
+              <P className="text-muted-foreground">
                 Set your override directory in Settings and click Scan to begin.
-              </p>
+              </P>
             </div>
           </motion.div>
         )}

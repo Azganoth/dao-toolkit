@@ -103,7 +103,7 @@ function ChargenResults({ stats, manifest }: ChargenResultsProps) {
         </CardHeader>
         <CardContent className="grid gap-x-12 gap-y-4 md:grid-cols-2">
           <div>
-            <Overline className="mb-2">Tints</Overline>
+            <Overline className="mb-2 font-display">Tints</Overline>
             <div className="space-y-3">
               <ChargenStatRow
                 label="Hair Colors"
@@ -156,7 +156,7 @@ function ChargenResults({ stats, manifest }: ChargenResultsProps) {
             </div>
           </div>
           <div>
-            <Overline className="mb-2">Textures</Overline>
+            <Overline className="mb-2 font-display">Textures</Overline>
             <div className="space-y-3">
               <ChargenStatRow
                 label="Skin Complexions"

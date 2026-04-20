@@ -22,9 +22,9 @@ function ChargenStatRow({
 }: ChargenStatRowProps) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-sm">{label}</span>
+      <span className="text-base font-medium">{label}</span>
       <div className="flex items-center gap-3">
-        <span className="font-mono text-sm text-muted-foreground">
+        <span className="font-mono text-base text-muted-foreground">
           {total} <span className="text-foreground">(+{files.length})</span>
         </span>
         <Tooltip>
@@ -32,7 +32,7 @@ function ChargenStatRow({
             <Button
               variant="ghost"
               size="icon"
-              className="size-6"
+              className="size-8"
               disabled={files.length === 0}
               onClick={() => onInspect(label, files)}
             >

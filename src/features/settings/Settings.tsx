@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Checkbox } from "@/components/ui/Checkbox";
 import {
   Dialog,
@@ -23,7 +23,6 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/InputGroup";
-import { Separator } from "@/components/ui/Separator";
 import { Overline } from "@/components/ui/Typography";
 import { cn } from "@/lib/utils";
 import { useDataStore } from "@/stores/data";
@@ -39,7 +38,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { motion, stagger, type Variants } from "motion/react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 const revealVariants: Variants = {
@@ -107,169 +106,180 @@ function Settings() {
 
   return (
     <motion.div
-      className="mx-auto flex max-w-200 flex-col gap-10 pb-10"
+      className="mx-auto flex max-w-200 flex-col gap-8 pb-10"
       transition={{ delayChildren: stagger(0.15) }}
       initial="hidden"
       animate="visible"
     >
       {/* File System Section */}
-      <motion.section className="space-y-4" variants={revealVariants}>
-        <Overline>File System</Overline>
-        <Card>
-          <Field>
-            <FieldContent>
-              <FieldLabel htmlFor="settings-override-path">
-                Override Directory
-              </FieldLabel>
-              <FieldDescription>
-                The location where your Dragon Age: Origins mods are installed.
-              </FieldDescription>
-            </FieldContent>
-            <InputGroup>
-              <InputGroupInput
-                id="settings-override-path"
-                type="text"
-                value={overridePath ?? ""}
-                placeholder="Select your Dragon Age override folder..."
-                className="font-mono"
-              />
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton onClick={selectFolder}>
-                  <FolderOpenIcon className="size-4" />
-                  Browse
-                </InputGroupButton>
-              </InputGroupAddon>
-            </InputGroup>
-          </Field>
-        </Card>
-      </motion.section>
+      <SettingsSection title="File System">
+        <Field>
+          <FieldContent>
+            <FieldLabel htmlFor="settings-override-path">
+              Override Directory
+            </FieldLabel>
+            <FieldDescription>
+              The location where your Dragon Age: Origins mods are installed.
+            </FieldDescription>
+          </FieldContent>
+          <InputGroup className="mt-2 h-10">
+            <InputGroupInput
+              id="settings-override-path"
+              type="text"
+              value={overridePath ?? ""}
+              placeholder="Select your Dragon Age override folder..."
+              className="font-mono"
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton onClick={selectFolder}>
+                <FolderOpenIcon className="size-4" />
+                Browse
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+        </Field>
+      </SettingsSection>
 
       {/* Interface Section */}
-      <motion.section className="space-y-4" variants={revealVariants}>
-        <Overline>Interface</Overline>
-        <Card>
-          <Field orientation="horizontal">
-            <FieldContent>
-              <FieldLabel>Theme</FieldLabel>
-              <FieldDescription>
-                Choose the appearance of the application.
-              </FieldDescription>
-            </FieldContent>
-            <div className="flex items-center rounded-md border p-1">
-              {themes.map(({ value, label, Icon }) => (
-                <Button
-                  key={value}
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "rounded-none px-3 first:rounded-l-sm last:rounded-r-sm",
-                    theme === value &&
-                      "text-primary shadow-sm hover:text-primary",
-                  )}
-                  onClick={() => setTheme(value)}
-                >
-                  <Icon className="size-4" />
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </Field>
-          <Field orientation="horizontal">
-            <FieldContent>
-              <FieldLabel htmlFor="settings-reduce-motion">
-                Reduced Motion
-              </FieldLabel>
-              <FieldDescription>Reduce motion for animations.</FieldDescription>
-            </FieldContent>
-            <Checkbox
-              id="settings-reduce-motion"
-              size="lg"
-              checked={reduceMotion}
-              onCheckedChange={setReduceMotion}
-            />
-          </Field>
-        </Card>
-      </motion.section>
+      <SettingsSection title="Interface">
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel>Theme</FieldLabel>
+            <FieldDescription>
+              Choose the appearance of the application.
+            </FieldDescription>
+          </FieldContent>
+          <div className="flex items-center rounded-md border p-1">
+            {themes.map(({ value, label, Icon }) => (
+              <Button
+                key={value}
+                variant="ghost"
+                className={cn(
+                  "rounded-none px-3 first:rounded-l-sm last:rounded-r-sm",
+                  theme === value &&
+                    "text-primary shadow-sm hover:text-primary",
+                )}
+                onClick={() => setTheme(value)}
+              >
+                <Icon className="size-4" />
+                {label}
+              </Button>
+            ))}
+          </div>
+        </Field>
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel htmlFor="settings-reduce-motion">
+              Reduced Motion
+            </FieldLabel>
+            <FieldDescription>Reduce motion for animations.</FieldDescription>
+          </FieldContent>
+          <Checkbox
+            id="settings-reduce-motion"
+            size="lg"
+            checked={reduceMotion}
+            onCheckedChange={setReduceMotion}
+          />
+        </Field>
+      </SettingsSection>
 
       {/* Data Management Section (Danger Zone) */}
-      <motion.section className="space-y-4" variants={revealVariants}>
-        <Overline className="text-destructive">Data Management</Overline>
-        <Card className="border-destructive/20 bg-destructive/5">
-          {/* Reset Settings */}
-          <Field orientation="horizontal">
-            <FieldContent>
-              <FieldLabel>Restore Defaults</FieldLabel>
-              <FieldDescription>
-                Revert your theme, override directory, and accessibility
-                preferences.
-              </FieldDescription>
-            </FieldContent>
-            <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="py-5">
-                  <RotateCcwIcon className="size-4" />
+      <SettingsSection title="Data Management" danger>
+        {/* Reset Settings */}
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel>Restore Defaults</FieldLabel>
+            <FieldDescription>
+              Revert your theme, override directory, and accessibility
+              preferences.
+            </FieldDescription>
+          </FieldContent>
+          <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="py-5">
+                <RotateCcwIcon className="size-4" />
+                Reset
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-106.25">
+              <DialogHeader>
+                <DialogTitle>Reset all settings?</DialogTitle>
+                <DialogDescription>
+                  This will revert your theme, override directory, and
+                  accessibility preferences.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button variant="destructive" onClick={handleResetSettings}>
                   Reset
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-106.25">
-                <DialogHeader>
-                  <DialogTitle>Reset all settings?</DialogTitle>
-                  <DialogDescription>
-                    This will revert your theme, override directory, and
-                    accessibility preferences.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                  </DialogClose>
-                  <Button variant="destructive" onClick={handleResetSettings}>
-                    Reset
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </Field>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </Field>
 
-          <Separator className="bg-destructive/10" />
-
-          {/* Delete Data */}
-          <Field orientation="horizontal">
-            <FieldContent>
-              <FieldLabel>Clear Application Data</FieldLabel>
-              <FieldDescription>
-                Permanently remove all scanned asset data and temporary files.
-              </FieldDescription>
-            </FieldContent>
-            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="py-5">
-                  <Trash2Icon className="size-4" />
+        {/* Delete Data */}
+        <Field orientation="horizontal">
+          <FieldContent>
+            <FieldLabel>Clear Application Data</FieldLabel>
+            <FieldDescription>
+              Permanently remove all scanned asset data and temporary files.
+            </FieldDescription>
+          </FieldContent>
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="destructive" className="py-5">
+                <Trash2Icon className="size-4" />
+                Clear Data
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-106.25">
+              <DialogHeader>
+                <DialogTitle>Clear all application data?</DialogTitle>
+                <DialogDescription>
+                  This will remove all scanned asset data from the application
+                  cache. You will need to rescan your folders.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button variant="destructive" onClick={handleDeleteData}>
                   Clear Data
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-106.25">
-                <DialogHeader>
-                  <DialogTitle>Clear all application data?</DialogTitle>
-                  <DialogDescription>
-                    This will remove all scanned asset data from the application
-                    cache. You will need to rescan your folders.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                  </DialogClose>
-                  <Button variant="destructive" onClick={handleDeleteData}>
-                    Clear Data
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </Field>
-        </Card>
-      </motion.section>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </Field>
+      </SettingsSection>
     </motion.div>
+  );
+}
+
+interface SettingsSectionProps {
+  title: ReactNode;
+  children: ReactNode;
+  danger?: boolean;
+}
+
+function SettingsSection({ title, children, danger }: SettingsSectionProps) {
+  return (
+    <motion.section variants={revealVariants}>
+      <Card className={cn(danger && "bg-destructive/5 ring-destructive/20")}>
+        <CardHeader>
+          <CardTitle>
+            <Overline className={cn("text-base", danger && "text-destructive")}>
+              {title}
+            </Overline>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">{children}</CardContent>
+      </Card>
+    </motion.section>
   );
 }
 
