@@ -16,9 +16,12 @@ import {
 import { cn } from "@/lib/utils";
 import { useDataStore } from "@/stores/data";
 import type { Resource } from "@/types/chargen";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { FolderOpenIcon } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+
+const RESOURCE_ROW_HEIGHT = 56;
 
 export interface InspectorData {
   title: string;
@@ -33,6 +36,12 @@ export interface CharenInspectorProps {
 function ChargenInspector({ data, onClose }: CharenInspectorProps) {
   const disabledResources = useDataStore((state) => state.disabled);
   const toggleResource = useDataStore((state) => state.toggleResource);
+  const [viewportElement, setViewportElement] = useState<HTMLDivElement | null>(
+    null,
+  );
+  const setViewportRef = useCallback((element: HTMLDivElement | null) => {
+    setViewportElement(element);
+  }, []);
 
   const handleReveal = async (path?: string) => {
     if (path) {
@@ -46,7 +55,18 @@ function ChargenInspector({ data, onClose }: CharenInspectorProps) {
     setActiveData(data);
   }
 
-  const displayData = data || activeData;
+  const { title, resources } = data ||
+    activeData || { title: "", resources: [] };
+
+  // TanStack Virtual returns instance methods that React Compiler cannot memoize safely.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: resources.length,
+    estimateSize: () => RESOURCE_ROW_HEIGHT,
+    getItemKey: (index) => resources[index]?.name ?? index,
+    getScrollElement: () => viewportElement,
+    overscan: 8,
+  });
 
   return (
     <Dialog
@@ -57,75 +77,83 @@ function ChargenInspector({ data, onClose }: CharenInspectorProps) {
         }
       }}
     >
-      {displayData && (
-        <DialogContent
-          className="max-h-[80vh] sm:max-w-lg"
-          onOpenAutoFocus={(e) => e.preventDefault()}
+      <DialogContent
+        className="max-h-[80vh] sm:max-w-lg"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            Found {resources.length} custom file
+            {resources.length === 1 ? "" : "s"}. Uncheck to exclude from
+            generation.
+          </DialogDescription>
+        </DialogHeader>
+        <ScrollArea
+          viewportRef={setViewportRef}
+          className="h-[50vh] rounded-md border p-4"
         >
-          <DialogHeader>
-            <DialogTitle>{displayData.title}</DialogTitle>
-            <DialogDescription>
-              Found {displayData.resources.length} custom file
-              {displayData.resources.length === 1 ? "" : "s"}. Uncheck to
-              exclude from generation.
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="h-[50vh] rounded-md border p-4">
-            {displayData.resources.length > 0 ? (
-              <ul className="space-y-2 font-mono text-sm">
-                {displayData.resources.map((resource, i) => {
-                  const isExcluded = disabledResources.includes(resource.name);
-                  return (
-                    <li
-                      key={i}
-                      className={cn(
-                        "flex items-center gap-3 rounded bg-muted/50 p-3",
-                        isExcluded && "opacity-60",
-                      )}
-                    >
-                      <Checkbox
-                        size="lg"
-                        checked={!isExcluded}
-                        onCheckedChange={() => toggleResource(resource.name)}
-                      />
-                      <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                        <span
-                          className={cn(
-                            "truncate",
-                            isExcluded && "text-muted-foreground line-through",
-                          )}
-                        >
-                          {resource.name}
-                        </span>
-                        {resource.path && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-6 shrink-0"
-                                onClick={() => handleReveal(resource.path)}
-                              >
-                                <FolderOpenIcon className="size-5" />
-                                <span className="sr-only">
-                                  Open file location
-                                </span>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Open file location</TooltipContent>
-                          </Tooltip>
+          {resources.length > 0 ? (
+            <ul
+              className="relative font-mono text-sm"
+              style={{ height: `${virtualizer.getTotalSize()}px` }}
+            >
+              {virtualizer.getVirtualItems().map((virtualItem) => {
+                const resource = resources[virtualItem.index];
+                const isExcluded = disabledResources.includes(resource.name);
+                return (
+                  <li
+                    key={virtualItem.key}
+                    className={cn(
+                      "absolute top-0 left-0 flex h-12 w-full items-center gap-3 rounded bg-muted/50 p-3",
+                      isExcluded && "opacity-60",
+                    )}
+                    style={{
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}
+                  >
+                    <Checkbox
+                      size="lg"
+                      checked={!isExcluded}
+                      onCheckedChange={() => toggleResource(resource.name)}
+                    />
+                    <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                      <span
+                        className={cn(
+                          "truncate",
+                          isExcluded && "text-muted-foreground line-through",
                         )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No files found.</p>
-            )}
-          </ScrollArea>
-        </DialogContent>
-      )}
+                      >
+                        {resource.name}
+                      </span>
+                      {resource.path && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-6 shrink-0"
+                              onClick={() => handleReveal(resource.path)}
+                            >
+                              <FolderOpenIcon className="size-5" />
+                              <span className="sr-only">
+                                Open file location
+                              </span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Open file location</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">No files found.</p>
+          )}
+        </ScrollArea>
+      </DialogContent>
     </Dialog>
   );
 }
