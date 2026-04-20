@@ -5,7 +5,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
 import type { Resource, ResourceGroup } from "@/types/chargen";
-import { EyeIcon } from "lucide-react";
+import { ListChecksIcon } from "lucide-react";
 
 export interface ChargenSummaryRowProps {
   label: string;
@@ -18,24 +18,20 @@ function ChargenSummaryRow({ label, data, onInspect }: ChargenSummaryRowProps) {
     <div className="flex items-center justify-between">
       <span className="text-base font-medium">{label}</span>
       <div className="flex items-center gap-3">
-        <span className="font-mono text-base text-muted-foreground">
-          {data.total}{" "}
-          <span className="text-foreground">(+{data.custom.length})</span>
-        </span>
+        <span className="font-mono">{data.custom.length}</span>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className="size-8"
-              disabled={data.custom.length === 0}
               onClick={() => onInspect(label, data.custom)}
             >
-              <EyeIcon className="size-5" />
-              <span className="sr-only">View custom files</span>
+              <ListChecksIcon className="size-5" />
+              <span className="sr-only">Choose custom files for {label}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>View custom files</TooltipContent>
+          <TooltipContent>Manage resource exclusions</TooltipContent>
         </Tooltip>
       </div>
     </div>

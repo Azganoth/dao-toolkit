@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/Dialog";
@@ -21,7 +22,7 @@ import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { FolderOpenIcon } from "lucide-react";
 import { useCallback, useState } from "react";
 
-const RESOURCE_ROW_HEIGHT = 56;
+const RESOURCE_ROW_HEIGHT = 40;
 
 export interface InspectorData {
   title: string;
@@ -35,6 +36,9 @@ export interface CharenInspectorProps {
 
 function ChargenInspector({ data, onClose }: CharenInspectorProps) {
   const disabledResources = useDataStore((state) => state.disabled);
+  const setResourcesDisabled = useDataStore(
+    (state) => state.setResourcesDisabled,
+  );
   const toggleResource = useDataStore((state) => state.toggleResource);
   const [viewportElement, setViewportElement] = useState<HTMLDivElement | null>(
     null,
@@ -57,6 +61,10 @@ function ChargenInspector({ data, onClose }: CharenInspectorProps) {
 
   const { title, resources } = data ||
     activeData || { title: "", resources: [] };
+  const excludedCount = resources.filter((resource) =>
+    disabledResources.includes(resource.name),
+  ).length;
+  const resourceNames = resources.map((resource) => resource.name);
 
   // TanStack Virtual returns instance methods that React Compiler cannot memoize safely.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -84,9 +92,7 @@ function ChargenInspector({ data, onClose }: CharenInspectorProps) {
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Found {resources.length} custom file
-            {resources.length === 1 ? "" : "s"}. Uncheck to exclude from
-            generation.
+            Choose which resources will show in the character creation.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea
@@ -105,8 +111,7 @@ function ChargenInspector({ data, onClose }: CharenInspectorProps) {
                   <li
                     key={virtualItem.key}
                     className={cn(
-                      "absolute top-0 left-0 flex h-12 w-full items-center gap-3 rounded bg-muted/50 p-3",
-                      isExcluded && "opacity-60",
+                      "absolute top-0 left-0 flex h-9 w-full items-center gap-3 rounded-md bg-muted px-3",
                     )}
                     style={{
                       transform: `translateY(${virtualItem.start}px)`,
@@ -132,7 +137,6 @@ function ChargenInspector({ data, onClose }: CharenInspectorProps) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-6 shrink-0"
                               onClick={() => handleReveal(resource.path)}
                             >
                               <FolderOpenIcon className="size-5" />
@@ -150,9 +154,39 @@ function ChargenInspector({ data, onClose }: CharenInspectorProps) {
               })}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">No files found.</p>
+            <p className="text-sm text-muted-foreground">
+              No custom resources found for this group.
+            </p>
           )}
         </ScrollArea>
+        {resources.length > 0 && (
+          <DialogFooter className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-muted-foreground">
+              <span className="font-mono text-foreground">{excludedCount}</span>{" "}
+              of{" "}
+              <span className="font-mono text-foreground">
+                {resources.length}
+              </span>{" "}
+              excluded
+            </div>
+            <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
+              <Button
+                variant="outline"
+                onClick={() => setResourcesDisabled(resourceNames, false)}
+                disabled={excludedCount === 0}
+              >
+                Include All
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setResourcesDisabled(resourceNames, true)}
+                disabled={excludedCount === resources.length}
+              >
+                Exclude All
+              </Button>
+            </div>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

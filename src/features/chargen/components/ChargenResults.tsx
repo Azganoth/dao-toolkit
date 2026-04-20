@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Overline } from "@/components/ui/Typography";
-import { ChargenRaceCard } from "@/features/chargen/components/ChargenRaceCard";
+import {
+  ChargenFaceResultCard,
+  ChargenResultCard,
+} from "@/features/chargen/components/ChargenResultCard";
 import { ChargenSummaryRow } from "@/features/chargen/components/ChargenSummaryRow";
 import { type ChargenData, type Resource } from "@/types/chargen";
 import { useState } from "react";
@@ -22,7 +23,7 @@ function ChargenResults({ data }: ChargenResultsProps) {
       <ChargenInspector data={inspector} onClose={() => setInspector(null)} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <ChargenRaceCard
+        <ChargenFaceResultCard
           title="Human Male"
           data={{
             heads: data.heads.hm,
@@ -31,22 +32,22 @@ function ChargenResults({ data }: ChargenResultsProps) {
           }}
           onInspect={handleInspect}
         />
-        <ChargenRaceCard
+        <ChargenFaceResultCard
           title="Human Female"
           data={{ heads: data.heads.hf, hairs: data.hairs.hf }}
           onInspect={handleInspect}
         />
-        <ChargenRaceCard
+        <ChargenFaceResultCard
           title="Elf Male"
           data={{ heads: data.heads.em, hairs: data.hairs.em }}
           onInspect={handleInspect}
         />
-        <ChargenRaceCard
+        <ChargenFaceResultCard
           title="Elf Female"
           data={{ heads: data.heads.ef, hairs: data.hairs.ef }}
           onInspect={handleInspect}
         />
-        <ChargenRaceCard
+        <ChargenFaceResultCard
           title="Dwarf Male"
           data={{
             heads: data.heads.dm,
@@ -55,80 +56,67 @@ function ChargenResults({ data }: ChargenResultsProps) {
           }}
           onInspect={handleInspect}
         />
-        <ChargenRaceCard
+        <ChargenFaceResultCard
           title="Dwarf Female"
           data={{ heads: data.heads.df, hairs: data.hairs.df }}
           onInspect={handleInspect}
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center">Shared Resources</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-x-12 gap-y-4 md:grid-cols-2">
-          <div>
-            <Overline className="mb-2 font-display">Tints</Overline>
-            <div className="space-y-3">
-              <ChargenSummaryRow
-                label="Hair Colors"
-                data={data.tints.hair}
-                onInspect={handleInspect}
-              />
-              <ChargenSummaryRow
-                label="Skin Tones"
-                data={data.tints.skin}
-                onInspect={handleInspect}
-              />
-              <ChargenSummaryRow
-                label="Eye Colors"
-                data={data.tints.eye}
-                onInspect={handleInspect}
-              />
-              <ChargenSummaryRow
-                label="Eye Makeup"
-                data={data.tints.eye_makeup}
-                onInspect={handleInspect}
-              />
-              <ChargenSummaryRow
-                label="Blush Makeup"
-                data={data.tints.blush_makeup}
-                onInspect={handleInspect}
-              />
-              <ChargenSummaryRow
-                label="Lip Makeup"
-                data={data.tints.lip_makeup}
-                onInspect={handleInspect}
-              />
-              <ChargenSummaryRow
-                label="Brow/Stubble"
-                data={data.tints.brow}
-                onInspect={handleInspect}
-              />
-              <ChargenSummaryRow
-                label="Tattoo Colors"
-                data={data.tints.tattoo}
-                onInspect={handleInspect}
-              />
-            </div>
-          </div>
-          <div>
-            <Overline className="mb-2 font-display">Textures</Overline>
-            <div className="space-y-3">
-              <ChargenSummaryRow
-                label="Skin Complexions"
-                data={data.textures.skin}
-                onInspect={handleInspect}
-              />
-              <ChargenSummaryRow
-                label="Tattoos"
-                data={data.textures.tattoo}
-                onInspect={handleInspect}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ChargenResultCard title="Shared Resources">
+        <div className="grid gap-x-12 gap-y-3 md:grid-cols-2">
+          <ChargenSummaryRow
+            label="Hair Colors"
+            data={data.tints.hair}
+            onInspect={handleInspect}
+          />
+          <ChargenSummaryRow
+            label="Skin Tones"
+            data={data.tints.skin}
+            onInspect={handleInspect}
+          />
+          <ChargenSummaryRow
+            label="Eye Colors"
+            data={data.tints.eye}
+            onInspect={handleInspect}
+          />
+          <ChargenSummaryRow
+            label="Eye Makeup"
+            data={data.tints.eye_makeup}
+            onInspect={handleInspect}
+          />
+          <ChargenSummaryRow
+            label="Blush Makeup"
+            data={data.tints.blush_makeup}
+            onInspect={handleInspect}
+          />
+          <ChargenSummaryRow
+            label="Lip Makeup"
+            data={data.tints.lip_makeup}
+            onInspect={handleInspect}
+          />
+          <ChargenSummaryRow
+            label="Brow/Stubble"
+            data={data.tints.brow}
+            onInspect={handleInspect}
+          />
+          <ChargenSummaryRow
+            label="Tattoo Colors"
+            data={data.tints.tattoo}
+            onInspect={handleInspect}
+          />
+          <ChargenSummaryRow
+            label="Skin Complexions"
+            data={data.textures.skin}
+            onInspect={handleInspect}
+          />
+          <ChargenSummaryRow
+            label="Tattoos"
+            data={data.textures.tattoo}
+            onInspect={handleInspect}
+          />
+        </div>
+      </ChargenResultCard>
     </div>
   );
 }

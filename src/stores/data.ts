@@ -4,6 +4,7 @@ import { immer } from "zustand/middleware/immer";
 
 interface ChargenDataSlice {
   disabled: string[];
+  setResourcesDisabled: (names: string[], disabled: boolean) => void;
   toggleResource: (name: string) => void;
 }
 
@@ -20,6 +21,15 @@ const createChargenSlice: StateCreator<
   ChargenDataSlice
 > = (set) => ({
   disabled: [],
+  setResourcesDisabled: (names, disabled) =>
+    set((state) => {
+      const selected = new Set(names);
+      if (disabled) {
+        state.disabled = Array.from(new Set([...state.disabled, ...selected]));
+      } else {
+        state.disabled = state.disabled.filter((name) => !selected.has(name));
+      }
+    }),
   toggleResource: (name) =>
     set((state) => {
       const index = state.disabled.indexOf(name);
