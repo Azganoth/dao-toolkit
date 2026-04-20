@@ -1,32 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ChargenStatRow } from "@/features/chargen/components/ChargenStatRow";
-import type { HairResource, Resource } from "@/types/chargen";
+import { ChargenSummaryRow } from "@/features/chargen/components/ChargenSummaryRow";
+import type { HairResource, Resource, ResourceGroup } from "@/types/chargen";
 import { useCallback } from "react";
 
 export interface ChargenRaceCardProps {
   title: string;
-  stats: {
-    heads: number;
-    hairs: number;
-    beards?: number;
+  data: {
+    heads: ResourceGroup<Resource>;
+    hairs: ResourceGroup<HairResource>;
+    beards?: ResourceGroup<Resource>;
   };
-  manifest: {
-    heads: Resource[];
-    hairs: HairResource[];
-    beards?: Resource[];
-  };
-  onInspect: (title: string, files: (Resource | HairResource)[]) => void;
+  onInspect: (title: string, resources: Resource[]) => void;
 }
 
-function ChargenRaceCard({
-  title,
-  stats,
-  manifest,
-  onInspect,
-}: ChargenRaceCardProps) {
+function ChargenRaceCard({ title, data, onInspect }: ChargenRaceCardProps) {
   const handleInspect = useCallback(
-    (subtitle: string, files: (Resource | HairResource)[]) => {
-      onInspect(`${title} - ${subtitle}`, files);
+    (subtitle: string, resources: Resource[]) => {
+      onInspect(`${title} - ${subtitle}`, resources);
     },
     [title, onInspect],
   );
@@ -37,23 +27,20 @@ function ChargenRaceCard({
         <CardTitle className="text-center">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <ChargenStatRow
+        <ChargenSummaryRow
           label="Heads"
-          total={stats.heads}
-          files={manifest.heads}
+          data={data.heads}
           onInspect={handleInspect}
         />
-        <ChargenStatRow
+        <ChargenSummaryRow
           label="Hairs"
-          total={stats.hairs}
-          files={manifest.hairs}
+          data={data.hairs}
           onInspect={handleInspect}
         />
-        {stats.beards !== undefined && manifest.beards !== undefined && (
-          <ChargenStatRow
+        {data.beards && (
+          <ChargenSummaryRow
             label="Beards"
-            total={stats.beards}
-            files={manifest.beards}
+            data={data.beards}
             onInspect={handleInspect}
           />
         )}

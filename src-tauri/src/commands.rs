@@ -7,7 +7,7 @@ use anyhow::{Context, Error};
 use tauri::State;
 
 use crate::{
-    core::chargen::{Chargen, ChargenManifest, ChargenStats, Filterable},
+    core::chargen::{Chargen, ChargenData, Filterable},
     ChargenState,
 };
 
@@ -34,15 +34,15 @@ pub async fn delete_all_chargen_files(path: String) -> Result<usize, String> {
 pub async fn scan_for_chargen_assets(
     path: String,
     state: State<'_, ChargenState>,
-) -> Result<(ChargenStats, ChargenManifest), String> {
+) -> Result<ChargenData, String> {
     let path_buf = resolve_path(&path)?;
-    let (chargen, stats, manifest) = Chargen::scan_from_path(&path_buf).map_err(format_err)?;
+    let (chargen, data) = Chargen::scan_from_path(&path_buf).map_err(format_err)?;
 
     let mut context = state.0.lock().unwrap();
     context.data = Some(chargen);
     context.path = Some(path_buf);
 
-    Ok((stats, manifest))
+    Ok(data)
 }
 
 #[tauri::command]

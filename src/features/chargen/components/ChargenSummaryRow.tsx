@@ -4,28 +4,23 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
-import type { HairResource, Resource } from "@/types/chargen";
+import type { Resource, ResourceGroup } from "@/types/chargen";
 import { EyeIcon } from "lucide-react";
 
-export interface ChargenStatRowProps {
+export interface ChargenSummaryRowProps {
   label: string;
-  total: number;
-  files: (Resource | HairResource)[];
-  onInspect: (title: string, files: (Resource | HairResource)[]) => void;
+  data: ResourceGroup<Resource>;
+  onInspect: (title: string, resources: Resource[]) => void;
 }
 
-function ChargenStatRow({
-  label,
-  total,
-  files,
-  onInspect,
-}: ChargenStatRowProps) {
+function ChargenSummaryRow({ label, data, onInspect }: ChargenSummaryRowProps) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-base font-medium">{label}</span>
       <div className="flex items-center gap-3">
         <span className="font-mono text-base text-muted-foreground">
-          {total} <span className="text-foreground">(+{files.length})</span>
+          {data.total}{" "}
+          <span className="text-foreground">(+{data.custom.length})</span>
         </span>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -33,8 +28,8 @@ function ChargenStatRow({
               variant="ghost"
               size="icon"
               className="size-8"
-              disabled={files.length === 0}
-              onClick={() => onInspect(label, files)}
+              disabled={data.custom.length === 0}
+              onClick={() => onInspect(label, data.custom)}
             >
               <EyeIcon className="size-5" />
               <span className="sr-only">View custom files</span>
@@ -47,4 +42,4 @@ function ChargenStatRow({
   );
 }
 
-export { ChargenStatRow };
+export { ChargenSummaryRow };

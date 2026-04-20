@@ -209,7 +209,7 @@ pub static VANILLA_CHARGEN: LazyLock<Chargen> = LazyLock::new(|| Chargen {
             ("ef_har_hd4a_0", "1")
         ],
     },
-    beards: Race2Group {
+    beards: BeardRaceGroup {
         hm: index_set![
             "",
             "hm_brd_b1a_0",

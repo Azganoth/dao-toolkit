@@ -3,10 +3,13 @@ export interface Resource {
   path?: string;
 }
 
-export interface HairResource {
-  name: string;
+export interface HairResource extends Resource {
   cut: string;
-  path?: string;
+}
+
+export interface ResourceGroup<T> {
+  total: number;
+  custom: T[];
 }
 
 export interface RaceGroup<T> {
@@ -18,7 +21,7 @@ export interface RaceGroup<T> {
   ef: T;
 }
 
-export interface GenderGroup<T> {
+export interface BeardRaceGroup<T> {
   hm: T;
   dm: T;
 }
@@ -39,18 +42,10 @@ export interface TextureGroup<T> {
   tattoo: T;
 }
 
-export interface ChargenStats {
-  heads: RaceGroup<number>;
-  hairs: RaceGroup<number>;
-  beards: GenderGroup<number>;
-  tints: TintGroup<number>;
-  textures: TextureGroup<number>;
-}
-
-export interface ChargenManifest {
-  heads: RaceGroup<Resource[]>;
-  hairs: RaceGroup<HairResource[]>;
-  beards: GenderGroup<Resource[]>;
-  tints: TintGroup<Resource[]>;
-  textures: TextureGroup<Resource[]>;
+export interface ChargenData {
+  heads: RaceGroup<ResourceGroup<Resource>>;
+  hairs: RaceGroup<ResourceGroup<HairResource>>;
+  beards: BeardRaceGroup<ResourceGroup<Resource>>;
+  tints: TintGroup<ResourceGroup<Resource>>;
+  textures: TextureGroup<ResourceGroup<Resource>>;
 }

@@ -16,7 +16,7 @@ impl Chargen {
         Self::default()
     }
 
-    pub fn scan_from_path(path: &Path) -> Result<(Self, ChargenStats, ChargenManifest)> {
+    pub fn scan_from_path(path: &Path) -> Result<(Self, ChargenData)> {
         io::scan_from_path(path)
     }
 

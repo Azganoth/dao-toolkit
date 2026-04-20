@@ -9,7 +9,7 @@ import { useChargenStore } from "@/features/chargen/stores/chargen";
 import { overridePathGuard } from "@/lib/utils";
 import { useDataStore } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
-import { type ChargenManifest, type ChargenStats } from "@/types/chargen";
+import { type ChargenData } from "@/types/chargen";
 import { invoke } from "@tauri-apps/api/core";
 import {
   BrushCleaningIcon,
@@ -26,10 +26,9 @@ import { ChargenResults } from "./components/ChargenResults";
 function ChargenGenerator() {
   const {
     path: scanPath,
-    stats,
-    manifest,
+    data,
     status,
-    setStats,
+    setData,
     setPath,
     setStatus,
     setError,
@@ -54,11 +53,10 @@ function ChargenGenerator() {
 
     try {
       setPath(overridePath);
-      const result = await invoke<[ChargenStats, ChargenManifest]>(
-        "scan_for_chargen_assets",
-        { path: overridePath },
-      );
-      setStats(result[0], result[1]);
+      const result = await invoke<ChargenData>("scan_for_chargen_assets", {
+        path: overridePath,
+      });
+      setData(result);
       setStatus("success");
       toast.success("Scan complete.");
     } catch (error) {
@@ -74,7 +72,7 @@ function ChargenGenerator() {
   const handleGenerate = async () => {
     if (!overridePathGuard(overridePath)) return;
 
-    if (!stats) {
+    if (!data) {
       toast.error("No scan data found.", {
         description: "Please run a scan first.",
       });
@@ -116,7 +114,7 @@ function ChargenGenerator() {
 
   const isBusy = status === "scanning" || status === "generating";
   const canGenerate = Boolean(
-    stats && overridePath && scanPath === overridePath,
+    data && overridePath && scanPath === overridePath,
   );
   const currentScanTime =
     scanPath && scanPath === overridePath ? lastScanTime : null;
@@ -185,7 +183,7 @@ function ChargenGenerator() {
 
       {/* Content Section */}
       <AnimatePresence mode="wait">
-        {stats && manifest ? (
+        {data ? (
           <motion.div
             key="results"
             initial={{ opacity: 0, y: 20 }}
@@ -194,7 +192,7 @@ function ChargenGenerator() {
             transition={{ duration: 0.3 }}
           >
             <H3 className="mb-4 text-center">Scan results</H3>
-            <ChargenResults stats={stats} manifest={manifest} />
+            <ChargenResults data={data} />
           </motion.div>
         ) : (
           <motion.div

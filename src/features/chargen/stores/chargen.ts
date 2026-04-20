@@ -1,14 +1,13 @@
-import { type ChargenManifest, type ChargenStats } from "@/types/chargen";
+import { type ChargenData } from "@/types/chargen";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
 interface ChargenStore {
   path: string | null;
-  stats: ChargenStats | null;
-  manifest: ChargenManifest | null;
+  data: ChargenData | null;
   status: "idle" | "scanning" | "generating" | "success" | "error";
   error: string | null;
-  setStats: (stats: ChargenStats, manifest: ChargenManifest) => void;
+  setData: (data: ChargenData) => void;
   setPath: (path: string) => void;
   setStatus: (status: ChargenStore["status"]) => void;
   setError: (error: string | null) => void;
@@ -18,14 +17,12 @@ interface ChargenStore {
 export const useChargenStore = create<ChargenStore>()(
   immer((set) => ({
     path: null,
-    stats: null,
-    manifest: null,
+    data: null,
     status: "idle",
     error: null,
-    setStats: (stats, manifest) =>
+    setData: (data) =>
       set((state) => {
-        state.stats = stats;
-        state.manifest = manifest;
+        state.data = data;
       }),
     setPath: (path) =>
       set((state) => {
@@ -42,8 +39,7 @@ export const useChargenStore = create<ChargenStore>()(
     reset: () =>
       set((state) => {
         state.path = null;
-        state.stats = null;
-        state.manifest = null;
+        state.data = null;
         state.status = "idle";
         state.error = null;
       }),

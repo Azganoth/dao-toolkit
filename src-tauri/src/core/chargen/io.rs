@@ -13,7 +13,7 @@ use crate::core::xml::{write_declaration, write_leaf, write_list, write_tag};
 
 /* Scan */
 
-pub fn scan_from_path(path: &Path) -> Result<(Chargen, ChargenStats, ChargenManifest)> {
+pub fn scan_from_path(path: &Path) -> Result<(Chargen, ChargenData)> {
     let metadata = fs::metadata(path)
         .with_context(|| format!("Failed to read override directory '{}'", path.display()))?;
     if !metadata.is_dir() {
@@ -23,14 +23,12 @@ pub fn scan_from_path(path: &Path) -> Result<(Chargen, ChargenStats, ChargenMani
     let mut custom_chargen = Chargen::default();
     scan_directory(&mut custom_chargen, path)?;
 
-    let manifest = ChargenManifest::from_chargen(&custom_chargen);
-
     let mut total_chargen = VANILLA_CHARGEN.clone();
     total_chargen.merge(&custom_chargen);
 
-    let total_stats = ChargenStats::from_chargen(&total_chargen);
+    let data = ChargenData::from_chargens(&VANILLA_CHARGEN, &custom_chargen);
 
-    Ok((total_chargen, total_stats, manifest))
+    Ok((total_chargen, data))
 }
 
 fn scan_directory(chargen: &mut Chargen, override_dir: &Path) -> Result<()> {

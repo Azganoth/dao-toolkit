@@ -1,98 +1,63 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Overline } from "@/components/ui/Typography";
 import { ChargenRaceCard } from "@/features/chargen/components/ChargenRaceCard";
-import { ChargenStatRow } from "@/features/chargen/components/ChargenStatRow";
-import {
-  type ChargenManifest,
-  type ChargenStats,
-  type HairResource,
-  type Resource,
-} from "@/types/chargen";
+import { ChargenSummaryRow } from "@/features/chargen/components/ChargenSummaryRow";
+import { type ChargenData, type Resource } from "@/types/chargen";
 import { useState } from "react";
-import { ChargenInspector, type InspectorState } from "./ChargenInspector";
+import { ChargenInspector, type InspectorData } from "./ChargenInspector";
 
 interface ChargenResultsProps {
-  stats: ChargenStats | null;
-  manifest: ChargenManifest | null;
+  data: ChargenData;
 }
 
-function ChargenResults({ stats, manifest }: ChargenResultsProps) {
-  const [inspector, setInspector] = useState<InspectorState>({
-    open: false,
-    title: "",
-    files: [],
-  });
+function ChargenResults({ data }: ChargenResultsProps) {
+  const [inspector, setInspector] = useState<InspectorData | null>(null);
 
-  const handleInspect = (title: string, files: (Resource | HairResource)[]) => {
-    setInspector({ open: true, title, files });
+  const handleInspect = (title: string, resources: Resource[]) => {
+    setInspector({ title, resources });
   };
-
-  if (!stats || !manifest) {
-    return (
-      <div className="flex h-64 items-center justify-center rounded-lg bg-muted/50">
-        <p className="text-muted-foreground">Run a scan to see the results.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-4">
-      <ChargenInspector
-        state={inspector}
-        onOpenChange={(open) => setInspector((prev) => ({ ...prev, open }))}
-      />
+      <ChargenInspector data={inspector} onClose={() => setInspector(null)} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <ChargenRaceCard
           title="Human Male"
-          stats={{
-            heads: stats.heads.hm,
-            hairs: stats.hairs.hm,
-            beards: stats.beards.hm,
-          }}
-          manifest={{
-            heads: manifest.heads.hm,
-            hairs: manifest.hairs.hm,
-            beards: manifest.beards.hm,
+          data={{
+            heads: data.heads.hm,
+            hairs: data.hairs.hm,
+            beards: data.beards.hm,
           }}
           onInspect={handleInspect}
         />
         <ChargenRaceCard
           title="Human Female"
-          stats={{ heads: stats.heads.hf, hairs: stats.hairs.hf }}
-          manifest={{ heads: manifest.heads.hf, hairs: manifest.hairs.hf }}
+          data={{ heads: data.heads.hf, hairs: data.hairs.hf }}
           onInspect={handleInspect}
         />
         <ChargenRaceCard
           title="Elf Male"
-          stats={{ heads: stats.heads.em, hairs: stats.hairs.em }}
-          manifest={{ heads: manifest.heads.em, hairs: manifest.hairs.em }}
+          data={{ heads: data.heads.em, hairs: data.hairs.em }}
           onInspect={handleInspect}
         />
         <ChargenRaceCard
           title="Elf Female"
-          stats={{ heads: stats.heads.ef, hairs: stats.hairs.ef }}
-          manifest={{ heads: manifest.heads.ef, hairs: manifest.hairs.ef }}
+          data={{ heads: data.heads.ef, hairs: data.hairs.ef }}
           onInspect={handleInspect}
         />
         <ChargenRaceCard
           title="Dwarf Male"
-          stats={{
-            heads: stats.heads.dm,
-            hairs: stats.hairs.dm,
-            beards: stats.beards.dm,
-          }}
-          manifest={{
-            heads: manifest.heads.dm,
-            hairs: manifest.hairs.dm,
-            beards: manifest.beards.dm,
+          data={{
+            heads: data.heads.dm,
+            hairs: data.hairs.dm,
+            beards: data.beards.dm,
           }}
           onInspect={handleInspect}
         />
         <ChargenRaceCard
           title="Dwarf Female"
-          stats={{ heads: stats.heads.df, hairs: stats.hairs.df }}
-          manifest={{ heads: manifest.heads.df, hairs: manifest.hairs.df }}
+          data={{ heads: data.heads.df, hairs: data.hairs.df }}
           onInspect={handleInspect}
         />
       </div>
@@ -105,52 +70,44 @@ function ChargenResults({ stats, manifest }: ChargenResultsProps) {
           <div>
             <Overline className="mb-2 font-display">Tints</Overline>
             <div className="space-y-3">
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Hair Colors"
-                total={stats.tints.hair}
-                files={manifest.tints.hair}
+                data={data.tints.hair}
                 onInspect={handleInspect}
               />
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Skin Tones"
-                total={stats.tints.skin}
-                files={manifest.tints.skin}
+                data={data.tints.skin}
                 onInspect={handleInspect}
               />
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Eye Colors"
-                total={stats.tints.eye}
-                files={manifest.tints.eye}
+                data={data.tints.eye}
                 onInspect={handleInspect}
               />
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Eye Makeup"
-                total={stats.tints.eye_makeup}
-                files={manifest.tints.eye_makeup}
+                data={data.tints.eye_makeup}
                 onInspect={handleInspect}
               />
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Blush Makeup"
-                total={stats.tints.blush_makeup}
-                files={manifest.tints.blush_makeup}
+                data={data.tints.blush_makeup}
                 onInspect={handleInspect}
               />
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Lip Makeup"
-                total={stats.tints.lip_makeup}
-                files={manifest.tints.lip_makeup}
+                data={data.tints.lip_makeup}
                 onInspect={handleInspect}
               />
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Brow/Stubble"
-                total={stats.tints.brow}
-                files={manifest.tints.brow}
+                data={data.tints.brow}
                 onInspect={handleInspect}
               />
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Tattoo Colors"
-                total={stats.tints.tattoo}
-                files={manifest.tints.tattoo}
+                data={data.tints.tattoo}
                 onInspect={handleInspect}
               />
             </div>
@@ -158,16 +115,14 @@ function ChargenResults({ stats, manifest }: ChargenResultsProps) {
           <div>
             <Overline className="mb-2 font-display">Textures</Overline>
             <div className="space-y-3">
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Skin Complexions"
-                total={stats.textures.skin}
-                files={manifest.textures.skin}
+                data={data.textures.skin}
                 onInspect={handleInspect}
               />
-              <ChargenStatRow
+              <ChargenSummaryRow
                 label="Tattoos"
-                total={stats.textures.tattoo}
-                files={manifest.textures.tattoo}
+                data={data.textures.tattoo}
                 onInspect={handleInspect}
               />
             </div>

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 /* Resource Structures */
 
-#[derive(Clone, Debug, Serialize, Deserialize, Eq)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, Eq)]
 pub struct Resource {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -42,7 +42,7 @@ impl From<String> for Resource {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Eq)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, Eq)]
 pub struct HairResource {
     pub name: String,
     pub cut: String,
@@ -66,6 +66,12 @@ impl Hash for HairResource {
 /* Group Structures */
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct ResourceGroup<T> {
+    pub total: usize,
+    pub custom: Vec<T>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct RaceGroup<T> {
     pub hm: T,
     pub hf: T,
@@ -76,7 +82,7 @@ pub struct RaceGroup<T> {
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct Race2Group<T> {
+pub struct BeardRaceGroup<T> {
     pub hm: T,
     pub dm: T,
 }
@@ -138,19 +144,19 @@ impl<T> RaceGroup<T> {
     }
 }
 
-impl<T> Race2Group<T> {
-    pub fn map<U, F>(self, f: F) -> Race2Group<U>
+impl<T> BeardRaceGroup<T> {
+    pub fn map<U, F>(self, f: F) -> BeardRaceGroup<U>
     where
         F: Fn(T) -> U + Copy,
     {
-        Race2Group {
+        BeardRaceGroup {
             hm: f(self.hm),
             dm: f(self.dm),
         }
     }
 
-    pub fn as_ref(&self) -> Race2Group<&T> {
-        Race2Group {
+    pub fn as_ref(&self) -> BeardRaceGroup<&T> {
+        BeardRaceGroup {
             hm: &self.hm,
             dm: &self.dm,
         }
@@ -236,57 +242,64 @@ impl<T> TextureGroup<T> {
 pub struct Chargen {
     pub heads: RaceGroup<IndexSet<Resource>>,
     pub hairs: RaceGroup<IndexSet<HairResource>>,
-    pub beards: Race2Group<IndexSet<Resource>>,
+    pub beards: BeardRaceGroup<IndexSet<Resource>>,
     pub tints: TintGroup<IndexSet<Resource>>,
     pub textures: TextureGroup<IndexSet<Resource>>,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct ChargenManifest {
-    pub heads: RaceGroup<Vec<Resource>>,
-    pub hairs: RaceGroup<Vec<HairResource>>,
-    pub beards: Race2Group<Vec<Resource>>,
-    pub tints: TintGroup<Vec<Resource>>,
-    pub textures: TextureGroup<Vec<Resource>>,
+pub struct ChargenData {
+    pub heads: RaceGroup<ResourceGroup<Resource>>,
+    pub hairs: RaceGroup<ResourceGroup<HairResource>>,
+    pub beards: BeardRaceGroup<ResourceGroup<Resource>>,
+    pub tints: TintGroup<ResourceGroup<Resource>>,
+    pub textures: TextureGroup<ResourceGroup<Resource>>,
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct ChargenStats {
-    pub heads: RaceGroup<usize>,
-    pub hairs: RaceGroup<usize>,
-    pub beards: Race2Group<usize>,
-    pub tints: TintGroup<usize>,
-    pub textures: TextureGroup<usize>,
-}
-
-impl ChargenManifest {
-    pub fn from_chargen(chargen: &Chargen) -> Self {
-        fn to_vec<T: Clone>(set: &IndexSet<T>) -> Vec<T> {
-            set.iter().cloned().collect()
+impl ChargenData {
+    pub fn from_chargens(vanilla: &Chargen, custom: &Chargen) -> Self {
+        fn to_group<T: Clone>(v: &IndexSet<T>, c: &IndexSet<T>) -> ResourceGroup<T> {
+            ResourceGroup {
+                total: v.len() + c.len(),
+                custom: c.iter().cloned().collect(),
+            }
         }
 
         Self {
-            heads: chargen.heads.as_ref().map(to_vec),
-            hairs: chargen.hairs.as_ref().map(to_vec),
-            beards: chargen.beards.as_ref().map(to_vec),
-            tints: chargen.tints.as_ref().map(to_vec),
-            textures: chargen.textures.as_ref().map(to_vec),
-        }
-    }
-}
-
-impl ChargenStats {
-    pub fn from_chargen(chargen: &Chargen) -> Self {
-        fn get_len<T>(set: &IndexSet<T>) -> usize {
-            set.len()
-        }
-
-        Self {
-            heads: chargen.heads.as_ref().map(get_len),
-            hairs: chargen.hairs.as_ref().map(get_len),
-            beards: chargen.beards.as_ref().map(get_len),
-            tints: chargen.tints.as_ref().map(get_len),
-            textures: chargen.textures.as_ref().map(get_len),
+            heads: RaceGroup {
+                hm: to_group(&vanilla.heads.hm, &custom.heads.hm),
+                hf: to_group(&vanilla.heads.hf, &custom.heads.hf),
+                dm: to_group(&vanilla.heads.dm, &custom.heads.dm),
+                df: to_group(&vanilla.heads.df, &custom.heads.df),
+                em: to_group(&vanilla.heads.em, &custom.heads.em),
+                ef: to_group(&vanilla.heads.ef, &custom.heads.ef),
+            },
+            hairs: RaceGroup {
+                hm: to_group(&vanilla.hairs.hm, &custom.hairs.hm),
+                hf: to_group(&vanilla.hairs.hf, &custom.hairs.hf),
+                dm: to_group(&vanilla.hairs.dm, &custom.hairs.dm),
+                df: to_group(&vanilla.hairs.df, &custom.hairs.df),
+                em: to_group(&vanilla.hairs.em, &custom.hairs.em),
+                ef: to_group(&vanilla.hairs.ef, &custom.hairs.ef),
+            },
+            beards: BeardRaceGroup {
+                hm: to_group(&vanilla.beards.hm, &custom.beards.hm),
+                dm: to_group(&vanilla.beards.dm, &custom.beards.dm),
+            },
+            tints: TintGroup {
+                hair: to_group(&vanilla.tints.hair, &custom.tints.hair),
+                skin: to_group(&vanilla.tints.skin, &custom.tints.skin),
+                eye: to_group(&vanilla.tints.eye, &custom.tints.eye),
+                eye_makeup: to_group(&vanilla.tints.eye_makeup, &custom.tints.eye_makeup),
+                blush_makeup: to_group(&vanilla.tints.blush_makeup, &custom.tints.blush_makeup),
+                lip_makeup: to_group(&vanilla.tints.lip_makeup, &custom.tints.lip_makeup),
+                brow: to_group(&vanilla.tints.brow, &custom.tints.brow),
+                tattoo: to_group(&vanilla.tints.tattoo, &custom.tints.tattoo),
+            },
+            textures: TextureGroup {
+                skin: to_group(&vanilla.textures.skin, &custom.textures.skin),
+                tattoo: to_group(&vanilla.textures.tattoo, &custom.textures.tattoo),
+            },
         }
     }
 }
@@ -322,7 +335,7 @@ impl<T: Filterable> Filterable for RaceGroup<T> {
     }
 }
 
-impl<T: Filterable> Filterable for Race2Group<T> {
+impl<T: Filterable> Filterable for BeardRaceGroup<T> {
     fn filter(&mut self, disabled: &HashSet<&String>) {
         self.hm.filter(disabled);
         self.dm.filter(disabled);
@@ -383,7 +396,7 @@ impl<T: Mergeable> Mergeable for RaceGroup<T> {
     }
 }
 
-impl<T: Mergeable> Mergeable for Race2Group<T> {
+impl<T: Mergeable> Mergeable for BeardRaceGroup<T> {
     fn merge(&mut self, other: &Self) {
         self.hm.merge(&other.hm);
         self.dm.merge(&other.dm);
