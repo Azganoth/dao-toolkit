@@ -35,7 +35,7 @@ function App() {
       await dataStoreTauriHandler.start();
 
       await useSettingsStore.getState().init();
-      updateTheme(useSettingsStore.getState().theme);
+      await updateTheme(useSettingsStore.getState().theme);
 
       await getCurrentWindow().show();
     };
@@ -46,7 +46,7 @@ function App() {
   const theme = useSettingsStore((state) => state.theme);
 
   useEffect(() => {
-    updateTheme(theme);
+    void updateTheme(theme);
   }, [theme]);
 
   return (
@@ -59,15 +59,15 @@ function App() {
         >
           <TabsList className="w-full flex-none">
             <TabsTrigger value="chargen">
-              <UserCheckIcon />
+              <UserCheckIcon className="size-5" />
               Chargen
             </TabsTrigger>
             <TabsTrigger value="scanner" disabled>
-              <SearchXIcon />
+              <SearchXIcon className="size-5" />
               Scanner
             </TabsTrigger>
             <TabsTrigger value="settings" className="ml-auto">
-              <SettingsIcon />
+              <SettingsIcon className="size-5" />
               Settings
             </TabsTrigger>
           </TabsList>

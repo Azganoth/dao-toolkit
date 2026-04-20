@@ -89,6 +89,10 @@
   ::selection {
     @apply bg-primary/60 text-foreground;
   }
+
+  button:not(:disabled):not([aria-disabled="true"]) {
+    @apply cursor-pointer;
+  }
 }
 
 /* Attribute Mappings */
