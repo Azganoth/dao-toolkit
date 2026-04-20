@@ -18,17 +18,32 @@ import {
   Wand2Icon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ChargenResults } from "./components/ChargenResults";
 
 function ChargenGenerator() {
-  const { stats, manifest, status, setStats, setPath, setStatus, setError } =
-    useChargenStore();
+  const {
+    path: scanPath,
+    stats,
+    manifest,
+    status,
+    setStats,
+    setPath,
+    setStatus,
+    setError,
+    reset,
+  } = useChargenStore();
   const { overridePath } = useSettingsStore();
   const disabledResources = useDataStore((state) => state.disabled);
 
   const [lastScanTime, setLastScanTime] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (!scanPath || scanPath === overridePath) return;
+
+    reset();
+  }, [overridePath, reset, scanPath]);
 
   const handleScan = async () => {
     if (!overridePathGuard(overridePath)) return;
@@ -69,7 +84,10 @@ function ChargenGenerator() {
     setError(null);
 
     try {
-      await invoke("generate_chargen_file", { disabled: disabledResources });
+      await invoke("generate_chargen_file", {
+        path: overridePath,
+        disabled: disabledResources,
+      });
       setStatus("success");
       toast.success("chargenmorphcfg.xml generated successfully.");
     } catch (error) {
@@ -96,6 +114,11 @@ function ChargenGenerator() {
   };
 
   const isBusy = status === "scanning" || status === "generating";
+  const canGenerate = Boolean(
+    stats && overridePath && scanPath === overridePath,
+  );
+  const currentScanTime =
+    scanPath && scanPath === overridePath ? lastScanTime : null;
 
   return (
     <div className="mx-auto flex max-w-200 flex-col gap-8 pb-8">
@@ -123,7 +146,7 @@ function ChargenGenerator() {
           <Button
             size="lg"
             onClick={handleGenerate}
-            disabled={isBusy || !stats}
+            disabled={isBusy || !canGenerate}
             variant="outline"
             className="w-32"
           >
@@ -153,8 +176,8 @@ function ChargenGenerator() {
         </div>
 
         <p className="text-sm text-muted-foreground max-sm:px-2">
-          {lastScanTime && (
-            <span>Last scan: {lastScanTime.toLocaleString()}</span>
+          {currentScanTime && (
+            <span>Last scan: {currentScanTime.toLocaleString()}</span>
           )}
         </p>
       </motion.div>
