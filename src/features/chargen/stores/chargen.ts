@@ -1,14 +1,20 @@
-import { type ChargenData } from "@/types/chargen";
+import { type ChargenData, type ChargenScanResult } from "@/types/chargen";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
+export interface ChargenScan {
+  id: string;
+  path: string;
+  requestedPath: string;
+  scannedAt: string;
+  data: ChargenData;
+}
+
 interface ChargenStore {
-  path: string | null;
-  data: ChargenData | null;
+  scan: ChargenScan | null;
   status: "idle" | "scanning" | "generating" | "success" | "error";
   error: string | null;
-  setData: (data: ChargenData) => void;
-  setPath: (path: string) => void;
+  setScan: (result: ChargenScanResult, requestedPath: string) => void;
   setStatus: (status: ChargenStore["status"]) => void;
   setError: (error: string | null) => void;
   reset: () => void;
@@ -16,17 +22,18 @@ interface ChargenStore {
 
 export const useChargenStore = create<ChargenStore>()(
   immer((set) => ({
-    path: null,
-    data: null,
+    scan: null,
     status: "idle",
     error: null,
-    setData: (data) =>
+    setScan: (result, requestedPath) =>
       set((state) => {
-        state.data = data;
-      }),
-    setPath: (path) =>
-      set((state) => {
-        state.path = path;
+        state.scan = {
+          id: result.id,
+          path: result.path,
+          requestedPath,
+          scannedAt: new Date().toISOString(),
+          data: result.data,
+        };
       }),
     setStatus: (status) =>
       set((state) => {
@@ -38,8 +45,7 @@ export const useChargenStore = create<ChargenStore>()(
       }),
     reset: () =>
       set((state) => {
-        state.path = null;
-        state.data = null;
+        state.scan = null;
         state.status = "idle";
         state.error = null;
       }),

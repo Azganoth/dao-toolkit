@@ -20,6 +20,7 @@ import { useDataStore } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
 import {
   type ChargenData,
+  type ChargenScanResult,
   type Resource,
   type ResourceGroup,
 } from "@/types/chargen";
@@ -28,13 +29,14 @@ import {
   BrushCleaningIcon,
   CircleAlertIcon,
   ClockIcon,
+  FolderIcon,
   Loader2Icon,
   SaveIcon,
   SearchIcon,
   Wand2Icon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { ChargenResults } from "./components/ChargenResults";
 
@@ -83,28 +85,13 @@ function getExcludedResourceCount(data: ChargenData, disabled: string[]) {
 }
 
 function ChargenGenerator() {
-  const {
-    path: scanPath,
-    data,
-    status,
-    setData,
-    setPath,
-    setStatus,
-    setError,
-    reset,
-  } = useChargenStore();
+  const { scan, status, setScan, setStatus, setError, reset } =
+    useChargenStore();
   const { overridePath } = useSettingsStore();
   const disabledResources = useDataStore((state) => state.disabled);
 
-  const [lastScanTime, setLastScanTime] = useState<Date | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    if (!scanPath || scanPath === overridePath) return;
-
-    reset();
-  }, [reset, scanPath, overridePath]);
 
   const handleScan = async () => {
     if (!overridePathGuard(overridePath)) return;
@@ -116,15 +103,16 @@ function ChargenGenerator() {
     });
 
     try {
-      setPath(overridePath);
-      const result = await invoke<ChargenData>("scan_for_chargen_assets", {
-        path: overridePath,
-      });
-      setData(result);
+      const result = await invoke<ChargenScanResult>(
+        "scan_for_chargen_assets",
+        {
+          path: overridePath,
+        },
+      );
+      setScan(result, overridePath);
       setStatus("success");
-      setLastScanTime(new Date());
 
-      const customCount = getCustomResourceCount(result);
+      const customCount = getCustomResourceCount(result.data);
       toast.success("Scan ready", {
         id: toastId,
         description:
@@ -144,21 +132,23 @@ function ChargenGenerator() {
   };
 
   const handleGenerate = async () => {
-    if (!overridePathGuard(overridePath)) return;
-
-    if (!data) {
+    if (!scan) {
       toast.error("Scan this folder before generating");
       return;
     }
 
     setStatus("generating");
     setError(null);
-    const excludedCount = getExcludedResourceCount(data, disabledResources);
+    const excludedCount = getExcludedResourceCount(
+      scan.data,
+      disabledResources,
+    );
     const toastId = toast.loading("Generating chargenmorphcfg.xml");
 
     try {
       await invoke("generate_chargen_file", {
-        path: overridePath,
+        scanId: scan.id,
+        path: scan.path,
         disabled: disabledResources,
       });
       setStatus("success");
@@ -180,12 +170,20 @@ function ChargenGenerator() {
     }
   };
 
-  const handleClear = () => {
-    reset();
-    setLastScanTime(null);
-    toast.success("Current scan cleared", {
-      description: "Your resource exclusions were kept.",
-    });
+  const handleClear = async () => {
+    if (!scan) return;
+
+    try {
+      await invoke("clear_chargen_scan", { scanId: scan.id });
+      reset();
+      toast.success("Current scan cleared", {
+        description: "Your resource exclusions were kept.",
+      });
+    } catch (error) {
+      toast.error("Could not clear the current scan", {
+        description: String(error),
+      });
+    }
   };
 
   const handleDelete = async () => {
@@ -225,20 +223,16 @@ function ChargenGenerator() {
   };
 
   const isBusy = status === "scanning" || status === "generating" || isDeleting;
-  const canGenerate = Boolean(
-    data && overridePath && scanPath === overridePath,
-  );
-  const currentScanTime =
-    scanPath && scanPath === overridePath ? lastScanTime : null;
+  const canGenerate = Boolean(scan);
+  const data = scan?.data ?? null;
+  const currentScanTime = scan && canGenerate ? new Date(scan.scannedAt) : null;
   const currentCustomCount =
     data && canGenerate ? getCustomResourceCount(data) : null;
   const generateDisabledReason = isBusy
     ? "Wait for the current operation to finish."
-    : !data
+    : !scan
       ? "Scan the override folder before generating."
-      : scanPath !== overridePath
-        ? "Override path changed. Scan this folder again."
-        : undefined;
+      : undefined;
 
   return (
     <div className="mx-auto flex max-w-300 flex-col gap-6 pb-8">
@@ -246,9 +240,9 @@ function ChargenGenerator() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="flex flex-col items-center justify-between gap-5 lg:flex-row"
+        className="flex flex-col items-center justify-between gap-5"
       >
-        <div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
+        <div className="grid gap-4 sm:grid-cols-[1fr_1fr_1fr]">
           <Button
             size="lg"
             variant={canGenerate ? "outline" : "default"}
@@ -318,6 +312,24 @@ function ChargenGenerator() {
                   {currentCustomCount}{" "}
                   {pluralize(currentCustomCount, "custom resource")} found
                 </span>
+              </>
+            )}
+            {scan && (
+              <>
+                <span className="mx-2.5">·</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex min-w-0 items-center">
+                      <FolderIcon className="mr-1.5 size-4 shrink-0" />
+                      <span className="max-w-80 truncate font-mono">
+                        {shortenPath(scan.path)}
+                      </span>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-md font-mono break-all">
+                    {scan.path}
+                  </TooltipContent>
+                </Tooltip>
               </>
             )}
           </div>

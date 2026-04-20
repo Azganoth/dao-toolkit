@@ -49,3 +49,9 @@ export interface ChargenData {
   tints: TintGroup<ResourceGroup<Resource>>;
   textures: TextureGroup<ResourceGroup<Resource>>;
 }
+
+export interface ChargenScanResult {
+  id: string;
+  path: string;
+  data: ChargenData;
+}

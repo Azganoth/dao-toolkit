@@ -11,6 +11,7 @@ mod core;
 
 #[derive(Default)]
 pub struct ChargenContext {
+    pub id: Option<String>,
     pub data: Option<Chargen>,
     pub path: Option<PathBuf>,
 }
@@ -47,6 +48,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::scan_for_chargen_assets,
             commands::generate_chargen_file,
+            commands::clear_chargen_scan,
             commands::delete_all_chargen_files,
         ])
         .run(tauri::generate_context!())
