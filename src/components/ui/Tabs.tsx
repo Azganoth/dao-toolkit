@@ -1,17 +1,22 @@
-import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { motion } from "motion/react";
-import * as React from "react";
+import { Tabs as TabsPrimitive } from "radix-ui";
+import {
+  createContext,
+  useContext,
+  useState,
+  type ComponentProps,
+} from "react";
 
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
-const TabsContext = React.createContext<{
+const TabsContext = createContext<{
   activeTab?: string;
   setActiveTab: (value: string) => void;
 } | null>(null);
 
 function useTabs() {
-  const context = React.useContext(TabsContext);
+  const context = useContext(TabsContext);
   if (!context) {
     throw new Error("useTabs must be used within a Tabs provider");
   }
@@ -25,11 +30,10 @@ function Tabs({
   onValueChange,
   defaultValue,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+}: ComponentProps<typeof TabsPrimitive.Root>) {
   const isControlled = value !== undefined;
 
-  const [uncontrolledValue, setUncontrolledValue] =
-    React.useState(defaultValue);
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
   const activeTab = isControlled ? value : uncontrolledValue;
 
   const handleValueChange = (newValue: string) => {
@@ -58,7 +62,7 @@ function Tabs({
 function TabsList({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.List>) {
+}: ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
@@ -76,8 +80,8 @@ function TabsTrigger({
   children,
   value,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Trigger> &
-  React.ComponentProps<typeof motion.button>) {
+}: ComponentProps<typeof TabsPrimitive.Trigger> &
+  ComponentProps<typeof motion.button>) {
   const { activeTab } = useTabs();
   const isActive = activeTab === value;
 
@@ -111,7 +115,7 @@ function TabsTrigger({
 function TabsContent({
   className,
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+}: ComponentProps<typeof TabsPrimitive.Content>) {
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"

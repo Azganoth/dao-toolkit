@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
-import * as React from "react";
+import type { ComponentProps } from "react";
 
-export function Overline({ className, ...props }: React.ComponentProps<"div">) {
+export function Overline({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       className={cn(

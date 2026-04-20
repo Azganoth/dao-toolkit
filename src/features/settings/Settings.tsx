@@ -36,7 +36,7 @@ import {
   RotateCcwIcon,
   SunIcon,
   Trash2Icon,
-  type LucideProps,
+  type LucideIcon,
 } from "lucide-react";
 import { motion, stagger, type Variants } from "motion/react";
 import { useState } from "react";
@@ -98,7 +98,7 @@ function Settings() {
   const themes: {
     value: typeof theme;
     label: string;
-    Icon: React.JSXElementConstructor<LucideProps>;
+    Icon: LucideIcon;
   }[] = [
     { value: "light", label: "Light", Icon: SunIcon },
     { value: "dark", label: "Dark", Icon: MoonIcon },
