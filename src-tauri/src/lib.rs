@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Mutex};
 
 use tauri::Manager;
-use tauri_plugin_decorum::WebviewWindowExt;
+use tauri_plugin_frame::FramePluginBuilder;
 use tauri_plugin_window_state::StateFlags;
 
 use crate::core::chargen::Chargen;
@@ -35,15 +35,15 @@ pub fn run() {
         )
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_decorum::init())
+        .plugin(
+            FramePluginBuilder::new()
+                .titlebar_height(32)
+                .button_width(46)
+                .auto_titlebar(true)
+                .button_hover_bg("color-mix(in srgb, currentColor 12%, transparent)")
+                .build(),
+        )
         .plugin(tauri_plugin_zustand::init())
-        .setup(|app| {
-            // Create custom title bar
-            let main_window = app.get_webview_window("main").unwrap();
-            main_window.create_overlay_titlebar().unwrap();
-
-            Ok(())
-        })
         .invoke_handler(tauri::generate_handler![
             commands::scan_for_chargen_assets,
             commands::generate_chargen_file,
