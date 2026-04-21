@@ -15,7 +15,12 @@ import {
 } from "@/components/ui/Tooltip";
 import { H4, P } from "@/components/ui/Typography";
 import { chargenApi } from "@/features/chargen/api";
+import { useChargenStaleExclusions } from "@/features/chargen/hooks/useChargenStaleExclusions";
 import { useChargenStore } from "@/features/chargen/stores/chargen";
+import {
+  getCustomResourceCount,
+  getExcludedResourceCount,
+} from "@/features/chargen/utils";
 import { requireOverridePath } from "@/features/settings/utils";
 import { getErrorMessage } from "@/lib/errors";
 import { pluralize } from "@/lib/format";
@@ -24,25 +29,18 @@ import { shortenPath } from "@/lib/paths";
 import { useDataStore } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
 import {
-  type ChargenData,
-  type Resource,
-  type ResourceGroup,
-} from "@/types/chargen";
-import {
   BrushCleaningIcon,
   CircleAlertIcon,
-  ClockIcon,
-  FolderIcon,
   Loader2Icon,
   SaveIcon,
   SearchIcon,
   Wand2Icon,
 } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { ChargenStaleExclusions } from "./components/ChargenStaleExclusions";
-import { ChargenResults } from "./components/ChargenSummary";
+import { ChargenSummary } from "./components/ChargenSummary";
 
 function formatScanTimestamp(date: Date) {
   const now = new Date();
@@ -52,7 +50,7 @@ function formatScanTimestamp(date: Date) {
   });
 
   if (date.toDateString() === now.toDateString()) {
-    return `Scanned at ${time}`;
+    return time;
   }
 
   const datePart = date.toLocaleDateString(undefined, {
@@ -61,43 +59,13 @@ function formatScanTimestamp(date: Date) {
     ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
   });
 
-  return `Scanned ${datePart} at ${time}`;
-}
-
-function getResourceGroups(data: ChargenData) {
-  return Object.values(data).flatMap((d) =>
-    Object.values(d),
-  ) as ResourceGroup<Resource>[];
-}
-
-function getCustomResourceCount(data: ChargenData) {
-  return getResourceGroups(data).reduce(
-    (total, group) => total + group.custom.length,
-    0,
-  );
-}
-
-function getExcludedResourceCount(data: ChargenData, disabled: string[]) {
-  const disabledSet = new Set(disabled);
-
-  return getResourceGroups(data).reduce(
-    (total, group) =>
-      total +
-      group.custom.filter((resource) => disabledSet.has(resource.name)).length,
-    0,
-  );
-}
-
-function getCustomResourceNames(data: ChargenData) {
-  return getResourceGroups(data).flatMap((group) =>
-    group.custom.map((resource) => resource.name),
-  );
+  return `${datePart}, ${time}`;
 }
 
 const revealResults: Variants = {
   hidden: {
     opacity: 0,
-    scale: 0.9,
+    scale: 0.95,
     transition: MOTION_TRANSITION.fast,
   },
   visible: {
@@ -107,24 +75,24 @@ const revealResults: Variants = {
   },
 };
 
+type PendingAction = "scan" | "generate" | "cleanup";
+
 function ChargenGenerator() {
-  const { scan, status, setScan, setStatus, setError, reset } =
-    useChargenStore();
+  const { scan, setScan, reset } = useChargenStore();
   const { overridePath } = useSettingsStore();
   const disabledResources = useDataStore((state) => state.disabled);
-  const setResourcesDisabled = useDataStore(
-    (state) => state.setResourcesDisabled,
-  );
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [staleDialogOpen, setStaleDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(
+    null,
+  );
 
   const handleScan = async () => {
     if (!requireOverridePath(overridePath)) return;
 
-    setStatus("scanning");
-    setError(null);
+    setPendingAction("scan");
     const toastId = toast.loading("Scanning override folder", {
       description: `Looking for chargen assets in ${shortenPath(overridePath)}.`,
     });
@@ -132,7 +100,6 @@ function ChargenGenerator() {
     try {
       const result = await chargenApi.scanAssets(overridePath);
       setScan(result, overridePath);
-      setStatus("success");
 
       const customCount = getCustomResourceCount(result.data);
       toast.success("Scan ready", {
@@ -143,13 +110,12 @@ function ChargenGenerator() {
             : "No custom chargen files found in this override folder.",
       });
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setError(errorMessage);
-      setStatus("error");
       toast.error("Scan could not read this folder", {
         id: toastId,
-        description: errorMessage,
+        description: getErrorMessage(error),
       });
+    } finally {
+      setPendingAction(null);
     }
   };
 
@@ -159,8 +125,7 @@ function ChargenGenerator() {
       return;
     }
 
-    setStatus("generating");
-    setError(null);
+    setPendingAction("generate");
     const excludedCount = getExcludedResourceCount(
       scan.data,
       disabledResources,
@@ -169,7 +134,6 @@ function ChargenGenerator() {
 
     try {
       await chargenApi.generateFile(scan.id, scan.path, disabledResources);
-      setStatus("success");
       toast.success("chargenmorphcfg.xml updated", {
         id: toastId,
         description:
@@ -178,13 +142,12 @@ function ChargenGenerator() {
             : "All scanned custom resources are included.",
       });
     } catch (error) {
-      const errorMessage = getErrorMessage(error);
-      setError(errorMessage);
-      setStatus("error");
       toast.error("Could not generate chargenmorphcfg.xml", {
         id: toastId,
-        description: errorMessage,
+        description: getErrorMessage(error),
       });
+    } finally {
+      setPendingAction(null);
     }
   };
 
@@ -208,7 +171,7 @@ function ChargenGenerator() {
     if (!requireOverridePath(overridePath)) return;
 
     setDeleteDialogOpen(false);
-    setIsDeleting(true);
+    setPendingAction("cleanup");
     const toastId = toast.loading("Deleting all chargenmorphcfg.xml files", {
       description: `Searching ${shortenPath(overridePath)}.`,
     });
@@ -234,141 +197,161 @@ function ChargenGenerator() {
         description: getErrorMessage(error),
       });
     } finally {
-      setIsDeleting(false);
+      setPendingAction(null);
     }
   };
 
-  const isBusy = status === "scanning" || status === "generating" || isDeleting;
-  const data = scan?.data ?? null;
-  const currentScanTime = scan ? new Date(scan.scannedAt) : null;
-  const currentCustomCount = data ? getCustomResourceCount(data) : null;
+  const {
+    staleDisabledResources,
+    staleCount,
+    removeStaleExclusion,
+    clearStaleExclusions,
+  } = useChargenStaleExclusions({ data: scan?.data });
 
-  const staleDisabledResources = useMemo(() => {
-    if (!data) return [];
-
-    const customResourceNames = new Set(getCustomResourceNames(data));
-    return disabledResources.filter((name) => !customResourceNames.has(name));
-  }, [data, disabledResources]);
-  const staleCount = staleDisabledResources.length;
-
-  const handleRemoveStaleExclusion = (name: string) => {
-    setResourcesDisabled([name], false);
-    toast.success("Saved exclusion removed", {
-      description: name,
-    });
-  };
-
-  const handleClearStaleExclusions = () => {
-    if (staleDisabledResources.length === 0) return;
-
-    const count = staleDisabledResources.length;
-    setResourcesDisabled(staleDisabledResources, false);
-    toast.success("Stale exclusions cleared", {
-      description: `Removed ${count} saved ${pluralize(count, "exclusion")} not found in this scan.`,
-    });
-  };
+  const isBusy = pendingAction !== null;
 
   return (
-    <div className="mx-auto flex max-w-300 flex-col gap-6 pb-8">
+    <div className="mx-auto flex max-w-300 flex-col pb-8">
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={MOTION_TRANSITION.slow}
-        className="flex flex-col items-center justify-between gap-5"
+        className="grid w-full gap-3 sm:grid-cols-3"
       >
-        <div className="grid gap-4 sm:grid-cols-[1fr_1fr_1fr]">
-          <Button
-            size="lg"
-            variant={scan ? "outline" : "default"}
-            onClick={handleScan}
-            disabled={isBusy || !overridePath}
-            className="h-11 w-full min-w-40 gap-2 px-4 text-base"
-          >
-            {status === "scanning" ? (
-              <Loader2Icon className="size-5 animate-spin" />
-            ) : (
-              <SearchIcon className="size-5" />
-            )}
-            {data ? "Re-Scan" : "Scan"}
-          </Button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex w-full">
-                <Button
-                  size="lg"
-                  onClick={handleGenerate}
-                  disabled={isBusy || !scan}
-                  className="h-11 w-full min-w-40 gap-2 px-4 text-base"
-                >
-                  {status === "generating" ? (
-                    <Loader2Icon className="size-5 animate-spin" />
-                  ) : (
-                    <SaveIcon className="size-5" />
-                  )}
-                  Generate
-                </Button>
-              </span>
-            </TooltipTrigger>
-            {!scan && (
-              <TooltipContent>
-                <CircleAlertIcon className="size-4" />
-                Scan the override folder before generating.
-              </TooltipContent>
-            )}
-          </Tooltip>
-          <Button
-            onClick={() => setDeleteDialogOpen(true)}
-            disabled={isBusy || !overridePath}
-            variant="outline"
-            size="lg"
-            className="h-11 w-full gap-2 px-4 sm:w-auto"
-          >
-            {isDeleting ? (
-              <Loader2Icon className="size-5 animate-spin" />
-            ) : (
-              <BrushCleaningIcon className="size-5" />
-            )}
-            Cleanup
-          </Button>
-        </div>
-        {(currentScanTime || currentCustomCount) && (
-          <div className="flex flex-wrap items-center rounded-md bg-muted/70 px-3 py-1.5 text-sm font-semibold text-muted-foreground">
-            {currentScanTime && (
-              <>
-                <ClockIcon className="mr-2 size-4.5" />
-                <span>{formatScanTimestamp(currentScanTime)}</span>
-              </>
-            )}
-            {currentCustomCount !== null && (
-              <>
-                <span className="mx-2.5">·</span>
-                <span>
-                  {currentCustomCount}{" "}
-                  {pluralize(currentCustomCount, "custom resource")} found
-                </span>
-              </>
-            )}
-            {scan && (
-              <>
-                <span className="mx-2.5">·</span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex min-w-0 items-center">
-                      <FolderIcon className="mr-1.5 size-4 shrink-0" />
-                      <span className="max-w-80 truncate font-mono">
-                        {shortenPath(scan.path)}
-                      </span>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-md font-mono break-all">
-                    {scan.path}
-                  </TooltipContent>
-                </Tooltip>
-              </>
-            )}
-          </div>
-        )}
+        <Button
+          size="lg"
+          variant={scan ? "outline" : "default"}
+          onClick={handleScan}
+          disabled={isBusy || !overridePath}
+          className="h-11 w-full min-w-40 gap-2 px-4 text-base"
+        >
+          {pendingAction === "scan" ? (
+            <Loader2Icon className="size-5 animate-spin" />
+          ) : (
+            <SearchIcon className="size-5" />
+          )}
+          {scan?.data ? "Rescan" : "Scan"}
+        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex w-full">
+              <Button
+                variant={scan ? "default" : "outline"}
+                size="lg"
+                onClick={handleGenerate}
+                disabled={isBusy || !scan}
+                className="h-11 w-full min-w-40 gap-2 px-4 text-base"
+              >
+                {pendingAction === "generate" ? (
+                  <Loader2Icon className="size-5 animate-spin" />
+                ) : (
+                  <SaveIcon className="size-5" />
+                )}
+                Generate
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!scan && (
+            <TooltipContent>
+              <CircleAlertIcon className="size-4" />
+              Scan the override folder before generating.
+            </TooltipContent>
+          )}
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => setDeleteDialogOpen(true)}
+              disabled={isBusy || !overridePath}
+              variant="outline"
+              size="lg"
+              className="h-11 w-full gap-2 px-4 sm:w-auto"
+            >
+              {pendingAction === "cleanup" ? (
+                <Loader2Icon className="size-5 animate-spin" />
+              ) : (
+                <BrushCleaningIcon className="size-5" />
+              )}
+              Cleanup
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Remove all chargenmorphcfg.xml files from the override folder
+            (Recommended before generating).
+          </TooltipContent>
+        </Tooltip>
       </motion.div>
+
+      <AnimatePresence mode="wait">
+        {scan ? (
+          <motion.div
+            key="results"
+            variants={revealResults}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            className="mt-6 flex flex-col gap-4"
+          >
+            <ChargenSummary data={scan.data} />
+            <ScanMetadata
+              path={scan.path}
+              scannedAt={scan.scannedAt}
+              customCount={getCustomResourceCount(scan.data)}
+            />
+            <div className="mt-6 flex gap-4">
+              {staleCount > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={() => setStaleDialogOpen(true)}
+                  className="h-11 flex-1"
+                >
+                  Review <strong>{staleCount}</strong> Stale{" "}
+                  {pluralize(staleCount, "Exclusion")}
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleClearScan}
+                disabled={isBusy}
+                className="h-11 flex-1"
+              >
+                Discard Scan
+              </Button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="empty"
+            variants={revealResults}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            className="flex min-h-[calc(100vh-18rem)] flex-col items-center justify-center gap-4 px-6 py-16 text-center text-muted-foreground"
+          >
+            <Wand2Icon className="size-10 opacity-70" />
+            <div className="max-w-md">
+              <H4 className="mb-8 text-muted-foreground">
+                No chargen data loaded
+              </H4>
+              <P className="text-muted-foreground">
+                Scan your override folder to find custom character creation
+                resources. You can review exclusions before generating
+                chargenmorphcfg.xml.
+              </P>
+            </div>
+            <P className="max-w-xl text-muted-foreground">
+              {overridePath ? (
+                <>
+                  Ready to scan <strong>{shortenPath(overridePath)}</strong>.
+                </>
+              ) : (
+                <strong>Choose an override folder in Settings first.</strong>
+              )}
+            </P>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-xl">
@@ -394,81 +377,45 @@ function ChargenGenerator() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       <ChargenStaleExclusions
         open={staleDialogOpen}
         names={staleDisabledResources}
         onOpenChange={setStaleDialogOpen}
-        onRemove={handleRemoveStaleExclusion}
-        onClearAll={handleClearStaleExclusions}
+        onRemove={removeStaleExclusion}
+        onClearAll={clearStaleExclusions}
       />
+    </div>
+  );
+}
 
-      <AnimatePresence mode="wait">
-        {data ? (
-          <motion.div
-            key="results"
-            variants={revealResults}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-          >
-            <div className="mb-4 flex flex-col gap-3 rounded-lg border bg-muted/40 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-medium">
-                  {staleCount} saved {pluralize(staleCount, "exclusion")} not
-                  found in this scan
-                </p>
-                <p className="text-muted-foreground">
-                  Keep them for future scans, or review and remove the saved
-                  entries.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => setStaleDialogOpen(true)}
-              >
-                Review Stale Exclusions
-              </Button>
-            </div>
-            <ChargenResults data={data} />
-            <Button
-              variant="ghost"
-              size="lg"
-              onClick={handleClearScan}
-              disabled={isBusy}
-              className="mt-4 w-full py-6 text-muted-foreground hover:text-foreground"
-            >
-              Clear
-            </Button>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="empty"
-            variants={revealResults}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            className="flex flex-col items-center justify-center gap-5 rounded-xl border bg-card p-10 text-center"
-          >
-            <div className="rounded-full bg-muted p-8 text-muted-foreground">
-              <Wand2Icon className="size-20" />
-            </div>
-            <div className="max-w-md">
-              <H4 className="mb-2">Scan</H4>
-              <P className="text-muted-foreground">
-                Scan your override folder to find custom character creation
-                resources. You can review exclusions before generating
-                chargenmorphcfg.xml.
-              </P>
-            </div>
-            <P className="text-muted-foreground">
-              {overridePath
-                ? `Ready to scan ${overridePath}.`
-                : "Choose an override folder in Settings first."}
-            </P>
-          </motion.div>
-        )}
-      </AnimatePresence>
+interface ScanMetadataProps {
+  path: string;
+  scannedAt: string;
+  customCount: number;
+}
+
+function ScanMetadata({ path, scannedAt, customCount }: ScanMetadataProps) {
+  const scanTime = new Date(scannedAt);
+
+  return (
+    <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2 rounded-md bg-card px-3 py-2 text-sm font-semibold text-muted-foreground">
+      <span>Scanned at {formatScanTimestamp(scanTime)}</span>
+      <span aria-hidden="true">·</span>
+      <span>
+        {customCount.toLocaleString()}{" "}
+        {pluralize(customCount, "custom resource")}
+      </span>
+      <span aria-hidden="true">·</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="min-w-0 truncate font-mono">
+            {shortenPath(path)}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-md font-mono break-all">
+          {path}
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }

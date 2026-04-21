@@ -126,4 +126,4 @@ function ChargenSummary({ data }: ChargenSummaryProps) {
   );
 }
 
-export { ChargenSummary as ChargenResults };
+export { ChargenSummary };
