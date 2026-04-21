@@ -8,19 +8,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/Dialog";
-import { ScrollArea } from "@/components/ui/ScrollArea";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
+import { P } from "@/components/ui/Typography";
+import {
+  VirtualList,
+  VirtualListContent,
+  VirtualListEmpty,
+  VirtualListItem,
+  VirtualListItems,
+} from "@/components/ui/VirtualList";
 import { cn } from "@/lib/cn";
 import { useDataStore } from "@/stores/data";
 import type { Resource } from "@/types/chargen";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { FolderOpenIcon } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useMemo, useState } from "react";
 
 const RESOURCE_ROW_HEIGHT = 40;
 
@@ -42,16 +48,23 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
 
   const { title, resources } = target ||
     activeTarget || { title: "", resources: [] };
-  const resourceNames = resources.map((resource) => resource.name);
+  const resourceNames = useMemo(
+    () => resources.map((resource) => resource.name),
+    [resources],
+  );
 
   const disabledResources = useDataStore((state) => state.disabled);
   const setResourcesDisabled = useDataStore(
     (state) => state.setResourcesDisabled,
   );
   const toggleResource = useDataStore((state) => state.toggleResource);
+  const disabledResourcesSet = useMemo(
+    () => new Set(disabledResources),
+    [disabledResources],
+  );
 
   const excludedCount = resources.filter((resource) =>
-    disabledResources.includes(resource.name),
+    disabledResourcesSet.has(resource.name),
   ).length;
 
   const handleRevealResource = async (path?: string) => {
@@ -59,24 +72,6 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
       await revealItemInDir(path);
     }
   };
-
-  const [viewportElement, setViewportElement] = useState<HTMLDivElement | null>(
-    null,
-  );
-
-  const setViewportRef = useCallback((element: HTMLDivElement | null) => {
-    setViewportElement(element);
-  }, []);
-
-  // TanStack Virtual returns instance methods that React Compiler cannot memoize safely.
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const virtualizer = useVirtualizer({
-    count: resources.length,
-    estimateSize: () => RESOURCE_ROW_HEIGHT,
-    getItemKey: (index) => resources[index]?.name ?? index,
-    getScrollElement: () => viewportElement,
-    overscan: 8,
-  });
 
   return (
     <Dialog
@@ -97,72 +92,70 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
             Choose which resources will show in the character creation.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea
-          viewportRef={setViewportRef}
+        <VirtualList
+          items={resources}
+          estimateHeight={RESOURCE_ROW_HEIGHT}
+          getItemKey={(resource) => resource.name}
           className="h-[50vh] rounded-md border p-4"
         >
-          {resources.length > 0 ? (
-            <ul
-              className="relative font-mono text-sm"
-              style={{ height: `${virtualizer.getTotalSize()}px` }}
-            >
-              {virtualizer.getVirtualItems().map((virtualItem) => {
-                const resource = resources[virtualItem.index];
-                const isExcluded = disabledResources.includes(resource.name);
+          <VirtualListContent className="font-mono text-sm">
+            <VirtualListItems<Resource>>
+              {(resource, virtualRow) => {
+                const isExcluded = disabledResourcesSet.has(resource.name);
+
                 return (
-                  <li
-                    key={virtualItem.key}
-                    className={cn(
-                      "absolute top-0 left-0 flex h-9 w-full items-center gap-3 rounded-md bg-muted px-3",
-                    )}
-                    style={{
-                      transform: `translateY(${virtualItem.start}px)`,
-                    }}
+                  <VirtualListItem
+                    key={virtualRow.key}
+                    virtualRow={virtualRow}
+                    asChild
                   >
-                    <Checkbox
-                      size="lg"
-                      checked={!isExcluded}
-                      onCheckedChange={() => toggleResource(resource.name)}
-                    />
-                    <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                      <span
-                        className={cn(
-                          "truncate",
-                          isExcluded && "text-muted-foreground line-through",
+                    <li className="flex h-9 items-center gap-3 rounded-md bg-muted px-3">
+                      <Checkbox
+                        size="lg"
+                        checked={!isExcluded}
+                        onCheckedChange={() => toggleResource(resource.name)}
+                      />
+                      <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                        <span
+                          className={cn(
+                            "truncate",
+                            isExcluded && "text-muted-foreground line-through",
+                          )}
+                        >
+                          {resource.name}
+                        </span>
+                        {resource.path && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  handleRevealResource(resource.path)
+                                }
+                              >
+                                <FolderOpenIcon className="size-5" />
+                                <span className="sr-only">
+                                  Open file location
+                                </span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Open file location</TooltipContent>
+                          </Tooltip>
                         )}
-                      >
-                        {resource.name}
-                      </span>
-                      {resource.path && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() =>
-                                handleRevealResource(resource.path)
-                              }
-                            >
-                              <FolderOpenIcon className="size-5" />
-                              <span className="sr-only">
-                                Open file location
-                              </span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Open file location</TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                  </li>
+                      </div>
+                    </li>
+                  </VirtualListItem>
                 );
-              })}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">
+              }}
+            </VirtualListItems>
+          </VirtualListContent>
+          <VirtualListEmpty>
+            <P className="text-muted-foreground">
               No custom resources found for this group.
-            </p>
-          )}
-        </ScrollArea>
+            </P>
+          </VirtualListEmpty>
+        </VirtualList>
         {resources.length > 0 && (
           <DialogFooter className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
