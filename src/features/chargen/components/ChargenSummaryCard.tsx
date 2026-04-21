@@ -1,14 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import type { ChargenInspectorTarget } from "@/features/chargen/components/ChargenInspector";
 import { ChargenSummaryRow } from "@/features/chargen/components/ChargenSummaryRow";
 import type { HairResource, Resource, ResourceGroup } from "@/types/chargen";
 import { useCallback } from "react";
 
-interface ChargenResultCardProps {
+interface ChargenSummaryCardProps {
   title: string;
   children: React.ReactNode;
 }
 
-function ChargenResultCard({ title, children }: ChargenResultCardProps) {
+function ChargenSummaryCard({ title, children }: ChargenSummaryCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -19,49 +20,49 @@ function ChargenResultCard({ title, children }: ChargenResultCardProps) {
   );
 }
 
-export interface ChargenRaceCardProps {
+export interface ChargenFaceSummaryCardProps {
   title: string;
-  data: {
+  resourceGroups: {
     heads: ResourceGroup<Resource>;
     hairs: ResourceGroup<HairResource>;
     beards?: ResourceGroup<Resource>;
   };
-  onInspect: (title: string, resources: Resource[]) => void;
+  onInspect: (target: ChargenInspectorTarget) => void;
 }
 
-function ChargenFaceResultCard({
+function ChargenFaceSummaryCard({
   title,
-  data,
+  resourceGroups,
   onInspect,
-}: ChargenRaceCardProps) {
+}: ChargenFaceSummaryCardProps) {
   const handleInspect = useCallback(
-    (subtitle: string, resources: Resource[]) => {
-      onInspect(`${title} - ${subtitle}`, resources);
+    (target: ChargenInspectorTarget) => {
+      onInspect({ ...target, title: `${title} - ${target.title}` });
     },
     [title, onInspect],
   );
 
   return (
-    <ChargenResultCard title={title}>
+    <ChargenSummaryCard title={title}>
       <ChargenSummaryRow
-        label="Heads"
-        data={data.heads}
+        title="Heads"
+        resourceGroup={resourceGroups.heads}
         onInspect={handleInspect}
       />
       <ChargenSummaryRow
-        label="Hairs"
-        data={data.hairs}
+        title="Hairs"
+        resourceGroup={resourceGroups.hairs}
         onInspect={handleInspect}
       />
-      {data.beards && (
+      {resourceGroups.beards && (
         <ChargenSummaryRow
-          label="Beards"
-          data={data.beards}
+          title="Beards"
+          resourceGroup={resourceGroups.beards}
           onInspect={handleInspect}
         />
       )}
-    </ChargenResultCard>
+    </ChargenSummaryCard>
   );
 }
 
-export { ChargenFaceResultCard, ChargenResultCard };
+export { ChargenFaceSummaryCard, ChargenSummaryCard };

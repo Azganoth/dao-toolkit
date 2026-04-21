@@ -3,7 +3,7 @@ import { Slot } from "radix-ui";
 import type { ComponentProps } from "react";
 
 import { Separator } from "@/components/ui/Separator";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 
 function ItemGroup({ className, ...props }: ComponentProps<"div">) {
   return (

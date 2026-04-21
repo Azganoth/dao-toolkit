@@ -14,7 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 import { useDataStore } from "@/stores/data";
 import type { Resource } from "@/types/chargen";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -24,47 +24,49 @@ import { useCallback, useState } from "react";
 
 const RESOURCE_ROW_HEIGHT = 40;
 
-export interface InspectorData {
+export interface ChargenInspectorTarget {
   title: string;
   resources: Resource[];
 }
 
 export interface CharenInspectorProps {
-  data?: InspectorData | null;
+  target?: ChargenInspectorTarget | null;
   onClose?: () => void;
 }
 
-function ChargenInspector({ data, onClose }: CharenInspectorProps) {
+function ChargenInspector({ target, onClose }: CharenInspectorProps) {
+  const [activeTarget, setActiveData] = useState(target);
+  if (target && target !== activeTarget) {
+    setActiveData(target);
+  }
+
+  const { title, resources } = target ||
+    activeTarget || { title: "", resources: [] };
+  const resourceNames = resources.map((resource) => resource.name);
+
   const disabledResources = useDataStore((state) => state.disabled);
   const setResourcesDisabled = useDataStore(
     (state) => state.setResourcesDisabled,
   );
   const toggleResource = useDataStore((state) => state.toggleResource);
-  const [viewportElement, setViewportElement] = useState<HTMLDivElement | null>(
-    null,
-  );
-  const setViewportRef = useCallback((element: HTMLDivElement | null) => {
-    setViewportElement(element);
-  }, []);
 
-  const handleReveal = async (path?: string) => {
+  const excludedCount = resources.filter((resource) =>
+    disabledResources.includes(resource.name),
+  ).length;
+
+  const handleRevealResource = async (path?: string) => {
     if (path) {
       await revealItemInDir(path);
     }
   };
 
-  const [activeData, setActiveData] = useState(data);
+  const [viewportElement, setViewportElement] = useState<HTMLDivElement | null>(
+    null,
+  );
 
-  if (data && data !== activeData) {
-    setActiveData(data);
-  }
-
-  const { title, resources } = data ||
-    activeData || { title: "", resources: [] };
-  const excludedCount = resources.filter((resource) =>
-    disabledResources.includes(resource.name),
-  ).length;
-  const resourceNames = resources.map((resource) => resource.name);
+  const setViewportRef = useCallback((element: HTMLDivElement | null) => {
+    setViewportElement(element);
+  }, []);
 
   // TanStack Virtual returns instance methods that React Compiler cannot memoize safely.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -78,7 +80,7 @@ function ChargenInspector({ data, onClose }: CharenInspectorProps) {
 
   return (
     <Dialog
-      open={!!data}
+      open={!!target}
       onOpenChange={(open) => {
         if (!open) {
           onClose?.();
@@ -137,7 +139,9 @@ function ChargenInspector({ data, onClose }: CharenInspectorProps) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleReveal(resource.path)}
+                              onClick={() =>
+                                handleRevealResource(resource.path)
+                              }
                             >
                               <FolderOpenIcon className="size-5" />
                               <span className="sr-only">

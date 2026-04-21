@@ -14,18 +14,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
 import { H4, P } from "@/components/ui/Typography";
+import { chargenApi } from "@/features/chargen/api";
 import { useChargenStore } from "@/features/chargen/stores/chargen";
+import { requireOverridePath } from "@/features/settings/utils";
+import { getErrorMessage } from "@/lib/errors";
+import { pluralize } from "@/lib/format";
 import { MOTION_TRANSITION } from "@/lib/motion";
-import { overridePathGuard, pluralize, shortenPath } from "@/lib/utils";
+import { shortenPath } from "@/lib/paths";
 import { useDataStore } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
 import {
   type ChargenData,
-  type ChargenScanResult,
   type Resource,
   type ResourceGroup,
 } from "@/types/chargen";
-import { invoke } from "@tauri-apps/api/core";
 import {
   BrushCleaningIcon,
   CircleAlertIcon,
@@ -39,7 +41,7 @@ import {
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ChargenResults } from "./components/ChargenResults";
+import { ChargenResults } from "./components/ChargenSummary";
 
 function formatScanTimestamp(date: Date) {
   const now = new Date();
@@ -108,7 +110,7 @@ function ChargenGenerator() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleScan = async () => {
-    if (!overridePathGuard(overridePath)) return;
+    if (!requireOverridePath(overridePath)) return;
 
     setStatus("scanning");
     setError(null);
@@ -117,12 +119,7 @@ function ChargenGenerator() {
     });
 
     try {
-      const result = await invoke<ChargenScanResult>(
-        "scan_for_chargen_assets",
-        {
-          path: overridePath,
-        },
-      );
+      const result = await chargenApi.scanAssets(overridePath);
       setScan(result, overridePath);
       setStatus("success");
 
@@ -135,7 +132,7 @@ function ChargenGenerator() {
             : "No custom chargen files found in this override folder.",
       });
     } catch (error) {
-      const errorMessage = String(error);
+      const errorMessage = getErrorMessage(error);
       setError(errorMessage);
       setStatus("error");
       toast.error("Scan could not read this folder", {
@@ -160,11 +157,7 @@ function ChargenGenerator() {
     const toastId = toast.loading("Generating chargenmorphcfg.xml");
 
     try {
-      await invoke("generate_chargen_file", {
-        scanId: scan.id,
-        path: scan.path,
-        disabled: disabledResources,
-      });
+      await chargenApi.generateFile(scan.id, scan.path, disabledResources);
       setStatus("success");
       toast.success("chargenmorphcfg.xml updated", {
         id: toastId,
@@ -174,7 +167,7 @@ function ChargenGenerator() {
             : "All scanned custom resources are included.",
       });
     } catch (error) {
-      const errorMessage = String(error);
+      const errorMessage = getErrorMessage(error);
       setError(errorMessage);
       setStatus("error");
       toast.error("Could not generate chargenmorphcfg.xml", {
@@ -184,24 +177,24 @@ function ChargenGenerator() {
     }
   };
 
-  const handleClear = async () => {
+  const handleClearScan = async () => {
     if (!scan) return;
 
     try {
-      await invoke("clear_chargen_scan", { scanId: scan.id });
+      await chargenApi.clearScan(scan.id);
       reset();
       toast.success("Current scan cleared", {
         description: "Your resource exclusions were kept.",
       });
     } catch (error) {
       toast.error("Could not clear the current scan", {
-        description: String(error),
+        description: getErrorMessage(error),
       });
     }
   };
 
-  const handleDelete = async () => {
-    if (!overridePathGuard(overridePath)) return;
+  const handleDeleteChargenFiles = async () => {
+    if (!requireOverridePath(overridePath)) return;
 
     setDeleteDialogOpen(false);
     setIsDeleting(true);
@@ -210,9 +203,7 @@ function ChargenGenerator() {
     });
 
     try {
-      const count = await invoke<number>("delete_all_chargen_files", {
-        path: overridePath,
-      });
+      const count = await chargenApi.deleteFiles(overridePath);
 
       toast.success(
         count > 0
@@ -229,7 +220,7 @@ function ChargenGenerator() {
     } catch (error) {
       toast.error("Could not delete chargenmorphcfg.xml files", {
         id: toastId,
-        description: String(error),
+        description: getErrorMessage(error),
       });
     } finally {
       setIsDeleting(false);
@@ -237,16 +228,9 @@ function ChargenGenerator() {
   };
 
   const isBusy = status === "scanning" || status === "generating" || isDeleting;
-  const canGenerate = Boolean(scan);
   const data = scan?.data ?? null;
-  const currentScanTime = scan && canGenerate ? new Date(scan.scannedAt) : null;
-  const currentCustomCount =
-    data && canGenerate ? getCustomResourceCount(data) : null;
-  const generateDisabledReason = isBusy
-    ? "Wait for the current operation to finish."
-    : !scan
-      ? "Scan the override folder before generating."
-      : undefined;
+  const currentScanTime = scan ? new Date(scan.scannedAt) : null;
+  const currentCustomCount = data ? getCustomResourceCount(data) : null;
 
   return (
     <div className="mx-auto flex max-w-300 flex-col gap-6 pb-8">
@@ -259,7 +243,7 @@ function ChargenGenerator() {
         <div className="grid gap-4 sm:grid-cols-[1fr_1fr_1fr]">
           <Button
             size="lg"
-            variant={canGenerate ? "outline" : "default"}
+            variant={scan ? "outline" : "default"}
             onClick={handleScan}
             disabled={isBusy || !overridePath}
             className="h-11 w-full min-w-40 gap-2 px-4 text-base"
@@ -277,7 +261,7 @@ function ChargenGenerator() {
                 <Button
                   size="lg"
                   onClick={handleGenerate}
-                  disabled={isBusy || !canGenerate}
+                  disabled={isBusy || !scan}
                   className="h-11 w-full min-w-40 gap-2 px-4 text-base"
                 >
                   {status === "generating" ? (
@@ -289,10 +273,10 @@ function ChargenGenerator() {
                 </Button>
               </span>
             </TooltipTrigger>
-            {generateDisabledReason && (
+            {!scan && (
               <TooltipContent>
                 <CircleAlertIcon className="size-4" />
-                {generateDisabledReason}
+                Scan the override folder before generating.
               </TooltipContent>
             )}
           </Tooltip>
@@ -368,7 +352,7 @@ function ChargenGenerator() {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button variant="destructive" onClick={handleDeleteChargenFiles}>
               Delete XML Files
             </Button>
           </DialogFooter>
@@ -388,7 +372,7 @@ function ChargenGenerator() {
             <Button
               variant="ghost"
               size="lg"
-              onClick={handleClear}
+              onClick={handleClearScan}
               disabled={isBusy}
               className="mt-4 w-full py-6 text-muted-foreground hover:text-foreground"
             >

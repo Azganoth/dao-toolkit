@@ -3,7 +3,7 @@ import { Slot } from "radix-ui";
 import type { ComponentProps } from "react";
 
 import { MOTION_TRANSITION } from "@/lib/motion";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 import { motion } from "motion/react";
 
 const buttonVariants = cva(

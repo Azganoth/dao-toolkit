@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 import type { ComponentProps } from "react";
 
 export function H1({ className, ...props }: ComponentProps<"h1">) {

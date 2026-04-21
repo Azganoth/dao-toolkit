@@ -1,29 +1,3 @@
-import { type ClassValue, clsx } from "clsx";
-import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-export function overridePathGuard(path: string | null): path is string {
-  if (!path) {
-    toast.error("Choose an override folder first", {
-      description: "Set the Dragon Age override directory in Settings.",
-    });
-    return false;
-  }
-  return true;
-}
-
-export function pluralize(
-  count: number,
-  singular: string,
-  plural = `${singular}s`,
-) {
-  return count === 1 ? singular : plural;
-}
-
 const SEPARATOR = "/";
 
 export function shortenPath(path: string) {

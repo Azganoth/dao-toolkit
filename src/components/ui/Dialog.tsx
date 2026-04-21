@@ -3,7 +3,7 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 
 function Dialog({ ...props }: ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -124,10 +124,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn(
-        "font-display text-lg leading-none font-medium",
-        className,
-      )}
+      className={cn("font-display text-lg leading-none font-medium", className)}
       {...props}
     />
   );

@@ -8,7 +8,7 @@ import {
 } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 
 const TabsContext = createContext<{
   activeTab?: string;

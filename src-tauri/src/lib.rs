@@ -39,7 +39,7 @@ pub fn run() {
         .plugin(
             FramePluginBuilder::new()
                 .titlebar_height(32)
-                .button_width(46)
+                .button_width(52)
                 .auto_titlebar(true)
                 .button_hover_bg("color-mix(in srgb, currentColor 12%, transparent)")
                 .build(),

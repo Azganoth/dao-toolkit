@@ -24,7 +24,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/InputGroup";
 import { Overline } from "@/components/ui/Typography";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/cn";
 import { useDataStore } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
 import { open } from "@tauri-apps/plugin-dialog";
