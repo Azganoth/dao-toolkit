@@ -91,6 +91,7 @@ function ChargenStaleExclusions({
           </div>
           <Button
             variant="outline"
+            size="xl"
             onClick={onClearAll}
             disabled={names.length === 0}
           >

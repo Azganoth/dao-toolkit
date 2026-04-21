@@ -219,11 +219,11 @@ function ChargenGenerator() {
         className="grid w-full gap-3 sm:grid-cols-3"
       >
         <Button
-          size="lg"
           variant={scan ? "outline" : "default"}
+          size="xl"
           onClick={handleScan}
           disabled={isBusy || !overridePath}
-          className="h-11 w-full min-w-40 gap-2 px-4 text-base"
+          className="w-full min-w-40 text-base"
         >
           {pendingAction === "scan" ? (
             <Loader2Icon className="size-5 animate-spin" />
@@ -237,10 +237,10 @@ function ChargenGenerator() {
             <span className="inline-flex w-full">
               <Button
                 variant={scan ? "default" : "outline"}
-                size="lg"
+                size="xl"
                 onClick={handleGenerate}
                 disabled={isBusy || !scan}
-                className="h-11 w-full min-w-40 gap-2 px-4 text-base"
+                className="w-full min-w-40 text-base"
               >
                 {pendingAction === "generate" ? (
                   <Loader2Icon className="size-5 animate-spin" />
@@ -264,13 +264,13 @@ function ChargenGenerator() {
               onClick={() => setDeleteDialogOpen(true)}
               disabled={isBusy || !overridePath}
               variant="outline"
-              size="lg"
-              className="h-11 w-full gap-2 px-4 sm:w-auto"
+              size="xl"
+              className="w-full text-base"
             >
               {pendingAction === "cleanup" ? (
-                <Loader2Icon className="size-5 animate-spin" />
+                <Loader2Icon className="animate-spin" />
               ) : (
-                <BrushCleaningIcon className="size-5" />
+                <BrushCleaningIcon />
               )}
               Cleanup
             </Button>
@@ -302,8 +302,9 @@ function ChargenGenerator() {
               {staleCount > 0 && (
                 <Button
                   variant="outline"
+                  size="xl"
                   onClick={() => setStaleDialogOpen(true)}
-                  className="h-11 flex-1"
+                  className="flex-1"
                 >
                   Review <strong>{staleCount}</strong> Stale{" "}
                   {pluralize(staleCount, "Exclusion")}
@@ -311,10 +312,10 @@ function ChargenGenerator() {
               )}
               <Button
                 variant="outline"
-                size="lg"
+                size="xl"
                 onClick={handleClearScan}
                 disabled={isBusy}
-                className="h-11 flex-1"
+                className="flex-1"
               >
                 Discard Scan
               </Button>
@@ -369,9 +370,15 @@ function ChargenGenerator() {
           )}
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" size="xl">
+                Cancel
+              </Button>
             </DialogClose>
-            <Button variant="destructive" onClick={handleDeleteChargenFiles}>
+            <Button
+              variant="destructive"
+              size="xl"
+              onClick={handleDeleteChargenFiles}
+            >
               Delete XML Files
             </Button>
           </DialogFooter>

@@ -169,6 +169,7 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
             <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
               <Button
                 variant="outline"
+                size="xl"
                 onClick={() => setResourcesDisabled(resourceNames, false)}
                 disabled={excludedCount === 0}
               >
@@ -176,6 +177,7 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
               </Button>
               <Button
                 variant="outline"
+                size="xl"
                 onClick={() => setResourcesDisabled(resourceNames, true)}
                 disabled={excludedCount === resources.length}
               >

@@ -204,7 +204,7 @@ function Settings() {
           </FieldContent>
           <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="py-5">
+              <Button variant="destructive" className="py-5">
                 <RotateCcwIcon className="size-4" />
                 Reset
               </Button>
@@ -219,9 +219,15 @@ function Settings() {
               </DialogHeader>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
+                  <Button variant="outline" size="xl">
+                    Cancel
+                  </Button>
                 </DialogClose>
-                <Button variant="destructive" onClick={handleResetSettings}>
+                <Button
+                  variant="destructive"
+                  size="xl"
+                  onClick={handleResetSettings}
+                >
                   Reset
                 </Button>
               </DialogFooter>
@@ -254,9 +260,15 @@ function Settings() {
               </DialogHeader>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
+                  <Button variant="outline" size="xl">
+                    Cancel
+                  </Button>
                 </DialogClose>
-                <Button variant="destructive" onClick={handleDeleteData}>
+                <Button
+                  variant="destructive"
+                  size="xl"
+                  onClick={handleDeleteData}
+                >
                   Clear Data
                 </Button>
               </DialogFooter>
