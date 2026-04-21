@@ -1,7 +1,22 @@
 const SEPARATOR = "/";
 
+function normalizeWindowsPathPrefix(path: string) {
+  if (path.startsWith("\\\\?\\UNC\\")) {
+    return `\\\\${path.slice("\\\\?\\UNC\\".length)}`;
+  }
+
+  if (path.startsWith("\\\\?\\")) {
+    return path.slice("\\\\?\\".length);
+  }
+
+  return path;
+}
+
 export function shortenPath(path: string) {
-  const normalized = path.replace(/[\\/]+/g, SEPARATOR);
+  const pathWithoutPrefix = normalizeWindowsPathPrefix(path);
+  const isUnc = pathWithoutPrefix.startsWith("\\\\");
+  const normalizedPath = pathWithoutPrefix.replace(/[\\/]+/g, SEPARATOR);
+  const normalized = isUnc ? `${SEPARATOR}${normalizedPath}` : normalizedPath;
   const parts = normalized.split(SEPARATOR).filter(Boolean);
 
   if (parts.length <= 5) return normalized;
