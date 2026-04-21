@@ -39,8 +39,9 @@ import {
   Wand2Icon,
 } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ChargenStaleExclusions } from "./components/ChargenStaleExclusions";
 import { ChargenResults } from "./components/ChargenSummary";
 
 function formatScanTimestamp(date: Date) {
@@ -87,6 +88,12 @@ function getExcludedResourceCount(data: ChargenData, disabled: string[]) {
   );
 }
 
+function getCustomResourceNames(data: ChargenData) {
+  return getResourceGroups(data).flatMap((group) =>
+    group.custom.map((resource) => resource.name),
+  );
+}
+
 const revealResults: Variants = {
   hidden: {
     opacity: 0,
@@ -105,8 +112,12 @@ function ChargenGenerator() {
     useChargenStore();
   const { overridePath } = useSettingsStore();
   const disabledResources = useDataStore((state) => state.disabled);
+  const setResourcesDisabled = useDataStore(
+    (state) => state.setResourcesDisabled,
+  );
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [staleDialogOpen, setStaleDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleScan = async () => {
@@ -231,6 +242,31 @@ function ChargenGenerator() {
   const data = scan?.data ?? null;
   const currentScanTime = scan ? new Date(scan.scannedAt) : null;
   const currentCustomCount = data ? getCustomResourceCount(data) : null;
+
+  const staleDisabledResources = useMemo(() => {
+    if (!data) return [];
+
+    const customResourceNames = new Set(getCustomResourceNames(data));
+    return disabledResources.filter((name) => !customResourceNames.has(name));
+  }, [data, disabledResources]);
+  const staleCount = staleDisabledResources.length;
+
+  const handleRemoveStaleExclusion = (name: string) => {
+    setResourcesDisabled([name], false);
+    toast.success("Saved exclusion removed", {
+      description: name,
+    });
+  };
+
+  const handleClearStaleExclusions = () => {
+    if (staleDisabledResources.length === 0) return;
+
+    const count = staleDisabledResources.length;
+    setResourcesDisabled(staleDisabledResources, false);
+    toast.success("Stale exclusions cleared", {
+      description: `Removed ${count} saved ${pluralize(count, "exclusion")} not found in this scan.`,
+    });
+  };
 
   return (
     <div className="mx-auto flex max-w-300 flex-col gap-6 pb-8">
@@ -359,6 +395,14 @@ function ChargenGenerator() {
         </DialogContent>
       </Dialog>
 
+      <ChargenStaleExclusions
+        open={staleDialogOpen}
+        names={staleDisabledResources}
+        onOpenChange={setStaleDialogOpen}
+        onRemove={handleRemoveStaleExclusion}
+        onClearAll={handleClearStaleExclusions}
+      />
+
       <AnimatePresence mode="wait">
         {data ? (
           <motion.div
@@ -368,6 +412,24 @@ function ChargenGenerator() {
             animate="visible"
             exit="hidden"
           >
+            <div className="mb-4 flex flex-col gap-3 rounded-lg border bg-muted/40 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium">
+                  {staleCount} saved {pluralize(staleCount, "exclusion")} not
+                  found in this scan
+                </p>
+                <p className="text-muted-foreground">
+                  Keep them for future scans, or review and remove the saved
+                  entries.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setStaleDialogOpen(true)}
+              >
+                Review Stale Exclusions
+              </Button>
+            </div>
             <ChargenResults data={data} />
             <Button
               variant="ghost"
