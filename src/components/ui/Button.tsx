@@ -2,6 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 import type { ComponentProps } from "react";
 
+import { MOTION_TRANSITION } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 
@@ -75,7 +76,7 @@ function Button({
   return (
     <MotionButton
       {...(props.variant !== "link" && {
-        whileTap: { scale: 0.98, transition: { duration: 0.1 } },
+        whileTap: { scale: 0.98, transition: MOTION_TRANSITION.fast },
       })}
       {...props}
     />

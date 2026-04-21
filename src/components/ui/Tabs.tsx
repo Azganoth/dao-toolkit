@@ -106,6 +106,11 @@ function TabsTrigger({
             className="absolute inset-x-3 top-full h-0.75 rounded-full bg-primary"
             layout
             layoutId="tab-trigger-indicator"
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+            }}
           />
         )}
       </Button>

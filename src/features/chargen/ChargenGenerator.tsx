@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/Tooltip";
 import { H4, P } from "@/components/ui/Typography";
 import { useChargenStore } from "@/features/chargen/stores/chargen";
+import { MOTION_TRANSITION } from "@/lib/motion";
 import { overridePathGuard, pluralize, shortenPath } from "@/lib/utils";
 import { useDataStore } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
@@ -35,7 +36,7 @@ import {
   SearchIcon,
   Wand2Icon,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ChargenResults } from "./components/ChargenResults";
@@ -83,6 +84,19 @@ function getExcludedResourceCount(data: ChargenData, disabled: string[]) {
     0,
   );
 }
+
+const revealResults: Variants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.9,
+    transition: MOTION_TRANSITION.fast,
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: MOTION_TRANSITION.slow,
+  },
+};
 
 function ChargenGenerator() {
   const { scan, status, setScan, setStatus, setError, reset } =
@@ -237,9 +251,9 @@ function ChargenGenerator() {
   return (
     <div className="mx-auto flex max-w-300 flex-col gap-6 pb-8">
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        transition={MOTION_TRANSITION.slow}
         className="flex flex-col items-center justify-between gap-5"
       >
         <div className="grid gap-4 sm:grid-cols-[1fr_1fr_1fr]">
@@ -365,20 +379,29 @@ function ChargenGenerator() {
         {data ? (
           <motion.div
             key="results"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            variants={revealResults}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
           >
             <ChargenResults data={data} />
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={handleClear}
+              disabled={isBusy}
+              className="mt-4 w-full py-6 text-muted-foreground hover:text-foreground"
+            >
+              Clear
+            </Button>
           </motion.div>
         ) : (
           <motion.div
             key="empty"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
+            variants={revealResults}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
             className="flex flex-col items-center justify-center gap-5 rounded-xl border bg-card p-10 text-center"
           >
             <div className="rounded-full bg-muted p-8 text-muted-foreground">
@@ -400,17 +423,6 @@ function ChargenGenerator() {
           </motion.div>
         )}
       </AnimatePresence>
-      {data && (
-        <Button
-          variant="ghost"
-          size="lg"
-          onClick={handleClear}
-          disabled={isBusy}
-          className="py-6 text-muted-foreground hover:text-foreground"
-        >
-          Clear
-        </Button>
-      )}
     </div>
   );
 }

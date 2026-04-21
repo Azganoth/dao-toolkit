@@ -41,15 +41,23 @@ import { motion, stagger, type Variants } from "motion/react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
-const revealVariants: Variants = {
-  hidden: { opacity: 0, y: 40 },
+const revealContainer: Variants = {
+  hidden: {},
+  visible: {
+    transition: {
+      delayChildren: stagger(0.12),
+    },
+  },
+};
+
+const revealItem: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 40,
+  },
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.4,
-      ease: "easeOut",
-    },
   },
 };
 
@@ -107,7 +115,7 @@ function Settings() {
   return (
     <motion.div
       className="mx-auto flex max-w-200 flex-col gap-8 pb-10"
-      transition={{ delayChildren: stagger(0.15) }}
+      variants={revealContainer}
       initial="hidden"
       animate="visible"
     >
@@ -268,7 +276,7 @@ interface SettingsSectionProps {
 
 function SettingsSection({ title, children, danger }: SettingsSectionProps) {
   return (
-    <motion.section variants={revealVariants}>
+    <motion.section variants={revealItem}>
       <Card className={cn(danger && "bg-destructive/5 ring-destructive/20")}>
         <CardHeader>
           <CardTitle>
