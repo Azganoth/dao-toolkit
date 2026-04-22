@@ -29,6 +29,21 @@ function ChargenSummary({ data }: ChargenSummaryProps) {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <ChargenFaceSummaryCard
+          title="Human Female"
+          resourceGroups={{ heads: data.heads.hf, hairs: data.hairs.hf }}
+          onInspect={handleInspect}
+        />
+        <ChargenFaceSummaryCard
+          title="Elf Female"
+          resourceGroups={{ heads: data.heads.ef, hairs: data.hairs.ef }}
+          onInspect={handleInspect}
+        />
+        <ChargenFaceSummaryCard
+          title="Dwarf Female"
+          resourceGroups={{ heads: data.heads.df, hairs: data.hairs.df }}
+          onInspect={handleInspect}
+        />
+        <ChargenFaceSummaryCard
           title="Human Male"
           resourceGroups={{
             heads: data.heads.hm,
@@ -38,18 +53,8 @@ function ChargenSummary({ data }: ChargenSummaryProps) {
           onInspect={handleInspect}
         />
         <ChargenFaceSummaryCard
-          title="Human Female"
-          resourceGroups={{ heads: data.heads.hf, hairs: data.hairs.hf }}
-          onInspect={handleInspect}
-        />
-        <ChargenFaceSummaryCard
           title="Elf Male"
           resourceGroups={{ heads: data.heads.em, hairs: data.hairs.em }}
-          onInspect={handleInspect}
-        />
-        <ChargenFaceSummaryCard
-          title="Elf Female"
-          resourceGroups={{ heads: data.heads.ef, hairs: data.hairs.ef }}
           onInspect={handleInspect}
         />
         <ChargenFaceSummaryCard
@@ -61,14 +66,9 @@ function ChargenSummary({ data }: ChargenSummaryProps) {
           }}
           onInspect={handleInspect}
         />
-        <ChargenFaceSummaryCard
-          title="Dwarf Female"
-          resourceGroups={{ heads: data.heads.df, hairs: data.hairs.df }}
-          onInspect={handleInspect}
-        />
       </div>
 
-      <ChargenSummaryCard title="Shared Resources">
+      <ChargenSummaryCard title="Shared">
         <div className="grid gap-x-12 gap-y-3 md:grid-cols-2">
           <ChargenSummaryRow
             title="Hair Colors"

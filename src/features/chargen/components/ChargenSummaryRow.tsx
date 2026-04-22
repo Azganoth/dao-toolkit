@@ -5,6 +5,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
 import type { ChargenInspectorTarget } from "@/features/chargen/components/ChargenInspector";
+import { useExcludedResourcesSet } from "@/stores/data";
 import type { Resource, ResourceGroup } from "@/types/chargen";
 import { ListChecksIcon } from "lucide-react";
 
@@ -20,12 +21,23 @@ function ChargenSummaryRow({
   onInspect,
 }: ChargenSummaryRowProps) {
   const { custom: resources } = resourceGroup;
+  const disabledResourcesSet = useExcludedResourcesSet();
+  const excludedResourcesCount = resources.filter((resource) =>
+    disabledResourcesSet.has(resource.name),
+  ).length;
 
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-base font-medium">{title}</span>
-      <div className="flex items-center gap-3">
-        <span className="font-mono">{resources.length}</span>
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <span className="min-w-0 truncate font-medium">{title}</span>
+      <div className="flex shrink-0 items-center gap-2 font-mono text-sm">
+        {excludedResourcesCount > 0 && (
+          <span className="rounded-sm bg-muted px-1.5 py-0.5 text-muted-foreground">
+            {excludedResourcesCount.toLocaleString()} excluded
+          </span>
+        )}
+        <span className="rounded-sm bg-primary/50 px-1.5 py-0.5">
+          {resources.length.toLocaleString()} custom
+        </span>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
