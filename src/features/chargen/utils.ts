@@ -15,13 +15,13 @@ export function getCustomResourceCount(data: ChargenData) {
 
 export function getExcludedResourceCount(
   data: ChargenData,
-  disabled: string[],
+  excludedResources: ReadonlySet<string>,
 ) {
-  const disabledSet = new Set(disabled);
   return getResourceGroups(data).reduce(
     (total, group) =>
       total +
-      group.custom.filter((resource) => disabledSet.has(resource.name)).length,
+      group.custom.filter((resource) => excludedResources.has(resource.name))
+        .length,
     0,
   );
 }

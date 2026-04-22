@@ -1,5 +1,8 @@
 import { pluralize } from "@/lib/format";
-import { useDataStore } from "@/stores/data";
+import {
+  useExcludedResources,
+  useResourceExclusionActions,
+} from "@/stores/data";
 import type { ChargenData, Resource, ResourceGroup } from "@/types/chargen";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
@@ -17,37 +20,35 @@ function getCustomResourceNames(data: ChargenData) {
 }
 
 function useChargenStaleExclusions({ data }: { data?: ChargenData }) {
-  const disabledResources = useDataStore((state) => state.disabled);
-  const setResourcesDisabled = useDataStore(
-    (state) => state.setResourcesDisabled,
-  );
+  const excludedResources = useExcludedResources();
+  const { excludeResources } = useResourceExclusionActions();
 
   const staleDisabledResources = useMemo(() => {
     if (!data) return [];
 
     const customResourceNames = new Set(getCustomResourceNames(data));
-    return disabledResources.filter((name) => !customResourceNames.has(name));
-  }, [data, disabledResources]);
+    return excludedResources.filter((name) => !customResourceNames.has(name));
+  }, [data, excludedResources]);
 
   const removeStaleExclusion = useCallback(
     (name: string) => {
-      setResourcesDisabled([name], false);
+      excludeResources(name);
       toast.success("Saved exclusion removed", {
         description: name,
       });
     },
-    [setResourcesDisabled],
+    [excludeResources],
   );
 
   const clearStaleExclusions = useCallback(() => {
     if (staleDisabledResources.length === 0) return;
 
     const count = staleDisabledResources.length;
-    setResourcesDisabled(staleDisabledResources, false);
+    excludeResources(...staleDisabledResources);
     toast.success("Stale exclusions cleared", {
       description: `Removed ${count} saved ${pluralize(count, "exclusion")} not found in this scan.`,
     });
-  }, [setResourcesDisabled, staleDisabledResources]);
+  }, [staleDisabledResources, excludeResources]);
 
   return {
     staleDisabledResources,

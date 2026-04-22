@@ -1,10 +1,13 @@
 import { createTauriStore } from "@tauri-store/zustand";
+import { useMemo } from "react";
 import { create, type StateCreator } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { useShallow } from "zustand/shallow";
 
 interface ChargenDataSlice {
-  disabled: string[];
-  setResourcesDisabled: (names: string[], disabled: boolean) => void;
+  excludedResources: string[];
+  includeResources: (...names: string[]) => void;
+  excludeResources: (...names: string[]) => void;
   toggleResource: (name: string) => void;
 }
 
@@ -20,23 +23,27 @@ const createChargenSlice: StateCreator<
   [],
   ChargenDataSlice
 > = (set) => ({
-  disabled: [],
-  setResourcesDisabled: (names, disabled) =>
+  excludedResources: [],
+  includeResources: (...names) =>
     set((state) => {
       const selected = new Set(names);
-      if (disabled) {
-        state.disabled = Array.from(new Set([...state.disabled, ...selected]));
-      } else {
-        state.disabled = state.disabled.filter((name) => !selected.has(name));
-      }
+      state.excludedResources = state.excludedResources.filter(
+        (name) => !selected.has(name),
+      );
+    }),
+  excludeResources: (...names) =>
+    set((state) => {
+      state.excludedResources = Array.from(
+        new Set([...state.excludedResources, ...names]),
+      );
     }),
   toggleResource: (name) =>
     set((state) => {
-      const index = state.disabled.indexOf(name);
+      const index = state.excludedResources.indexOf(name);
       if (index === -1) {
-        state.disabled.push(name);
+        state.excludedResources.push(name);
       } else {
-        state.disabled.splice(index, 1);
+        state.excludedResources.splice(index, 1);
       }
     }),
 });
@@ -63,3 +70,22 @@ export const dataStoreTauriHandler = createTauriStore(
     saveOnChange: true,
   },
 );
+
+export function useExcludedResources() {
+  return useDataStore((state) => state.excludedResources);
+}
+
+export function useExcludedResourcesSet() {
+  const excludedResources = useExcludedResources();
+  return useMemo(() => new Set(excludedResources), [excludedResources]);
+}
+
+export function useResourceExclusionActions() {
+  return useDataStore(
+    useShallow((state) => ({
+      includeResources: state.includeResources,
+      excludeResources: state.excludeResources,
+      toggleResource: state.toggleResource,
+    })),
+  );
+}

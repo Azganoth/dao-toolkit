@@ -22,7 +22,10 @@ import {
   VirtualListItems,
 } from "@/components/ui/VirtualList";
 import { cn } from "@/lib/cn";
-import { useDataStore } from "@/stores/data";
+import {
+  useExcludedResourcesSet,
+  useResourceExclusionActions,
+} from "@/stores/data";
 import type { Resource } from "@/types/chargen";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { FolderOpenIcon } from "lucide-react";
@@ -53,18 +56,12 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
     [resources],
   );
 
-  const disabledResources = useDataStore((state) => state.disabled);
-  const setResourcesDisabled = useDataStore(
-    (state) => state.setResourcesDisabled,
-  );
-  const toggleResource = useDataStore((state) => state.toggleResource);
-  const disabledResourcesSet = useMemo(
-    () => new Set(disabledResources),
-    [disabledResources],
-  );
+  const excludedResourcesSet = useExcludedResourcesSet();
+  const { includeResources, excludeResources, toggleResource } =
+    useResourceExclusionActions();
 
-  const excludedCount = resources.filter((resource) =>
-    disabledResourcesSet.has(resource.name),
+  const excludedResourcesCount = resources.filter((resource) =>
+    excludedResourcesSet.has(resource.name),
   ).length;
 
   const handleRevealResource = async (path?: string) => {
@@ -101,7 +98,7 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
           <VirtualListContent className="font-mono text-sm">
             <VirtualListItems<Resource>>
               {(resource, virtualRow) => {
-                const isExcluded = disabledResourcesSet.has(resource.name);
+                const isExcluded = excludedResourcesSet.has(resource.name);
 
                 return (
                   <VirtualListItem
@@ -159,7 +156,9 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
         {resources.length > 0 && (
           <DialogFooter className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
-              <span className="font-mono text-foreground">{excludedCount}</span>{" "}
+              <span className="font-mono text-foreground">
+                {excludedResourcesCount}
+              </span>{" "}
               of{" "}
               <span className="font-mono text-foreground">
                 {resources.length}
@@ -170,16 +169,16 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
               <Button
                 variant="outline"
                 size="xl"
-                onClick={() => setResourcesDisabled(resourceNames, false)}
-                disabled={excludedCount === 0}
+                onClick={() => includeResources(...resourceNames)}
+                disabled={excludedResourcesCount === 0}
               >
                 Include All
               </Button>
               <Button
                 variant="outline"
                 size="xl"
-                onClick={() => setResourcesDisabled(resourceNames, true)}
-                disabled={excludedCount === resources.length}
+                onClick={() => excludeResources(...resourceNames)}
+                disabled={excludedResourcesCount === resources.length}
               >
                 Exclude All
               </Button>

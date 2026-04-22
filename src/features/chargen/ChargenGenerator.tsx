@@ -26,7 +26,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { pluralize } from "@/lib/format";
 import { MOTION_TRANSITION } from "@/lib/motion";
 import { shortenPath } from "@/lib/paths";
-import { useDataStore } from "@/stores/data";
+import { useExcludedResources, useExcludedResourcesSet } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
 import {
   BrushCleaningIcon,
@@ -80,7 +80,8 @@ type PendingAction = "scan" | "generate" | "cleanup";
 function ChargenGenerator() {
   const { scan, setScan, reset } = useChargenStore();
   const { overridePath } = useSettingsStore();
-  const disabledResources = useDataStore((state) => state.disabled);
+  const disabledResources = useExcludedResources();
+  const disabledResourcesSet = useExcludedResourcesSet();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [staleDialogOpen, setStaleDialogOpen] = useState(false);
@@ -128,7 +129,7 @@ function ChargenGenerator() {
     setPendingAction("generate");
     const excludedCount = getExcludedResourceCount(
       scan.data,
-      disabledResources,
+      disabledResourcesSet,
     );
     const toastId = toast.loading("Generating chargenmorphcfg.xml");
 
