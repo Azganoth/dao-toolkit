@@ -141,11 +141,11 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
     [resourceGroups, expandedGroups],
   );
 
-  const handleRevealResource = async (path?: string) => {
+  const handleRevealResource = useCallback(async (path?: string) => {
     if (path) {
       await revealItemInDir(path);
     }
-  };
+  }, []);
 
   const getRelativeResourcePath = useCallback(
     (path: string) => getRelativePath(path, scanPath),
@@ -190,14 +190,22 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
         >
           <VirtualListContent>
             <VirtualListItems<InspectorListRow>>
-              {(row, virtualRow) => (
+              {(row, virtualRow, _index, isScrolling) => (
                 <VirtualListItem
                   key={virtualRow.key}
                   virtualRow={virtualRow}
                   asChild
                 >
                   <li>
-                    {row.type === "group" ? (
+                    {row.type === "group" && isScrolling ? (
+                      <ScrollingGroupRow
+                        group={row.group}
+                        isExpanded={expandedGroups.has(row.group.id)}
+                        excludedCount={
+                          groupExcludedCounts.get(row.group.id) ?? 0
+                        }
+                      />
+                    ) : row.type === "group" ? (
                       <GroupRow
                         group={row.group}
                         isExpanded={expandedGroups.has(row.group.id)}
@@ -213,6 +221,11 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
                             collapseGroup(row.group.id);
                           }
                         }}
+                      />
+                    ) : isScrolling ? (
+                      <ScrollingResourceRow
+                        resource={row.resource}
+                        isExcluded={excludedResourcesSet.has(row.resource.name)}
                       />
                     ) : (
                       <ResourceRow
@@ -500,6 +513,43 @@ function GroupRow({
   );
 }
 
+interface ScrollingGroupRowProps {
+  group: ResourceModGroup;
+  isExpanded: boolean;
+  excludedCount: number;
+}
+
+function ScrollingGroupRow({
+  group,
+  isExpanded,
+  excludedCount,
+}: ScrollingGroupRowProps) {
+  return (
+    <div
+      className={cn(
+        "flex h-9 min-w-0 flex-1 items-center gap-1 rounded-md border border-transparent pr-2 hover:bg-muted/40",
+        "pointer-events-none pr-7.25 pl-2.25 font-sans",
+        group.isLoose && "bg-muted/30 text-muted-foreground",
+      )}
+    >
+      <ChevronRightIcon
+        className={cn(
+          "size-4 shrink-0 transition-transform",
+          isExpanded && "rotate-90",
+        )}
+      />
+      <span className="min-w-0 flex-1 truncate text-left text-sm font-medium">
+        {group.name}
+      </span>
+      <span className="shrink-0 font-mono text-xs text-muted-foreground">
+        {excludedCount > 0 && `${excludedCount.toLocaleString()} excluded · `}
+        {group.resources.length.toLocaleString()} items
+      </span>
+      <span aria-hidden="true" className="w-16 shrink-0" />
+    </div>
+  );
+}
+
 interface ResourceRowProps {
   resource: Resource;
   isExcluded: boolean;
@@ -517,16 +567,12 @@ function ResourceRow({
 }: ResourceRowProps) {
   return (
     <div className="group/resource relative flex h-9 items-center gap-3 rounded-md pr-2 pl-9 font-mono text-sm hover:bg-muted/45">
-      <span
-        aria-hidden="true"
-        className="absolute top-0 bottom-0 left-4 w-px bg-border/70"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute top-1/2 left-4 h-px w-3 bg-border/70"
-      />
+      <ResourceTreeGuide />
       <Checkbox
         size="lg"
+        aria-label={
+          isExcluded ? `Include ${resource.name}` : `Exclude ${resource.name}`
+        }
         checked={!isExcluded}
         onCheckedChange={() => toggleExclusion(resource.name)}
       />
@@ -568,6 +614,60 @@ function ResourceRow({
         )}
       </div>
     </div>
+  );
+}
+
+interface ScrollingResourceRowProps {
+  resource: Resource;
+  isExcluded: boolean;
+}
+
+function ScrollingResourceRow({
+  resource,
+  isExcluded,
+}: ScrollingResourceRowProps) {
+  return (
+    <div
+      className={cn(
+        "group/resource relative flex h-9 items-center gap-3 rounded-md pr-2 pl-9 font-mono text-sm hover:bg-muted/45",
+        "pointer-events-none",
+      )}
+    >
+      <ResourceTreeGuide />
+      <span
+        aria-hidden="true"
+        className={cn(
+          "size-5 shrink-0 rounded-lg border border-border/70",
+          !isExcluded && "border-primary/50 bg-primary/15",
+        )}
+      />
+      <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+        <span
+          className={cn(
+            "truncate",
+            isExcluded && "text-muted-foreground line-through",
+          )}
+        >
+          {resource.name}
+        </span>
+        <span aria-hidden="true" className="size-8 shrink-0" />
+      </div>
+    </div>
+  );
+}
+
+function ResourceTreeGuide() {
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className="absolute top-0 bottom-0 left-4 w-px bg-border/70"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute top-1/2 left-4 h-px w-3 bg-border/70"
+      />
+    </>
   );
 }
 

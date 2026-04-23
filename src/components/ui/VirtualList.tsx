@@ -18,6 +18,7 @@ interface VirtualListContextValue<T> {
   totalSize: number;
   virtualItems: VirtualItem[];
   isEmpty: boolean;
+  isScrolling: boolean;
 }
 
 const VirtualListContext =
@@ -74,6 +75,7 @@ function VirtualList<T>({
     totalSize: virtualizer.getTotalSize(),
     virtualItems: virtualizer.getVirtualItems(),
     isEmpty: items.length === 0,
+    isScrolling: virtualizer.isScrolling,
   };
 
   return (
@@ -109,16 +111,27 @@ function VirtualListContent({
 }
 
 interface VirtualListItemsProps<T> {
-  children: (item: T, virtualRow: VirtualItem, index: number) => ReactNode;
+  children: (
+    item: T,
+    virtualRow: VirtualItem,
+    index: number,
+    isScrolling: boolean,
+  ) => ReactNode;
 }
 
 function VirtualListItems<T>({ children }: VirtualListItemsProps<T>) {
-  const { getItem, isEmpty, virtualItems } = useVirtualListContext<T>();
+  const { getItem, isEmpty, isScrolling, virtualItems } =
+    useVirtualListContext<T>();
 
   if (isEmpty) return null;
 
   return virtualItems.map((virtualRow) =>
-    children(getItem(virtualRow.index), virtualRow, virtualRow.index),
+    children(
+      getItem(virtualRow.index),
+      virtualRow,
+      virtualRow.index,
+      isScrolling,
+    ),
   );
 }
 
@@ -138,7 +151,11 @@ function VirtualListItem({
     <Comp
       data-slot="virtual-list-item"
       className={cn("absolute top-0 left-0 w-full", className)}
-      style={{ ...style, transform: `translateY(${virtualRow.start}px)` }}
+      style={{
+        ...style,
+        contain: "layout paint style",
+        transform: `translate3d(0, ${virtualRow.start}px, 0)`,
+      }}
       {...props}
     />
   );
