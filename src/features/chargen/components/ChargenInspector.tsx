@@ -10,6 +10,14 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+} from "@/components/ui/Select";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -23,7 +31,9 @@ import {
   VirtualListItems,
 } from "@/components/ui/VirtualList";
 import {
+  getModGroupRootCandidates,
   groupResourcesByMod,
+  type ModGroupRule,
   type ResourceModGroup,
 } from "@/features/chargen/resourceMods";
 import { cn } from "@/lib/cn";
@@ -31,6 +41,8 @@ import { pluralize } from "@/lib/format";
 import { getRelativePath } from "@/lib/paths";
 import {
   useExcludedResourcesSet,
+  useModGroupRuleActions,
+  useModGroupRules,
   useResourceExclusionActions,
 } from "@/stores/data";
 import type { Resource } from "@/types/chargen";
@@ -97,6 +109,7 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
 
   const {
     resourceGroups,
+    groupRootCandidates,
     expandedGroups,
     expandGroup,
     collapseGroup,
@@ -107,6 +120,7 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
   const excludedResourcesSet = useExcludedResourcesSet();
   const { includeResources, excludeResources, toggleResource } =
     useResourceExclusionActions();
+  const { upsertModGroupRule } = useModGroupRuleActions();
 
   const excludedResourcesCount = useMemo(
     () =>
@@ -214,6 +228,10 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
                         }
                         includeResources={includeResources}
                         excludeResources={excludeResources}
+                        rootCandidates={
+                          groupRootCandidates.get(row.group.id) ?? []
+                        }
+                        setRootRule={upsertModGroupRule}
                         handleOpenChange={(open) => {
                           if (open) {
                             expandGroup(row.group.id);
@@ -328,9 +346,20 @@ interface UseResourceGroupsOptions {
 }
 
 function useResourceGroups({ resources, scanPath }: UseResourceGroupsOptions) {
+  const modGroupRules = useModGroupRules();
   const resourceGroups = useMemo(
-    () => groupResourcesByMod(resources, scanPath),
-    [resources, scanPath],
+    () => groupResourcesByMod(resources, scanPath, modGroupRules),
+    [modGroupRules, resources, scanPath],
+  );
+  const groupRootCandidates = useMemo(
+    () =>
+      new Map(
+        resourceGroups.map((group) => [
+          group.id,
+          getModGroupRootCandidates(group.resources, scanPath),
+        ]),
+      ),
+    [resourceGroups, scanPath],
   );
 
   const groupIds = useMemo(
@@ -340,24 +369,19 @@ function useResourceGroups({ resources, scanPath }: UseResourceGroupsOptions) {
 
   const groupStateKey = useMemo(() => groupIds.join("\u001f"), [groupIds]);
 
-  const [collapsedGroupState, setCollapsedGroupState] = useState(() => ({
+  const [expandedGroupState, setExpandedGroupState] = useState(() => ({
     groupIds: new Set<string>(),
     key: groupStateKey,
   }));
 
-  const collapsedGroups =
-    collapsedGroupState.key === groupStateKey
-      ? collapsedGroupState.groupIds
+  const expandedGroups =
+    expandedGroupState.key === groupStateKey
+      ? expandedGroupState.groupIds
       : EMPTY_GROUP_SET;
 
-  const expandedGroups = useMemo(
-    () => new Set(groupIds.filter((id) => !collapsedGroups.has(id))),
-    [collapsedGroups, groupIds],
-  );
-
-  const updateCollapsedGroups = useCallback(
+  const updateExpandedGroups = useCallback(
     (update: (current: Set<string>) => Set<string>) => {
-      setCollapsedGroupState((state) => {
+      setExpandedGroupState((state) => {
         const current =
           state.key === groupStateKey ? state.groupIds : EMPTY_GROUP_SET;
         const next = update(current);
@@ -375,20 +399,7 @@ function useResourceGroups({ resources, scanPath }: UseResourceGroupsOptions) {
 
   const expandGroup = useCallback(
     (groupId: string) => {
-      updateCollapsedGroups((current) => {
-        if (!current.has(groupId)) return current;
-
-        const next = new Set(current);
-        next.delete(groupId);
-        return next;
-      });
-    },
-    [updateCollapsedGroups],
-  );
-
-  const collapseGroup = useCallback(
-    (groupId: string) => {
-      updateCollapsedGroups((current) => {
+      updateExpandedGroups((current) => {
         if (current.has(groupId)) return current;
 
         const next = new Set(current);
@@ -396,20 +407,34 @@ function useResourceGroups({ resources, scanPath }: UseResourceGroupsOptions) {
         return next;
       });
     },
-    [updateCollapsedGroups],
+    [updateExpandedGroups],
+  );
+
+  const collapseGroup = useCallback(
+    (groupId: string) => {
+      updateExpandedGroups((current) => {
+        if (!current.has(groupId)) return current;
+
+        const next = new Set(current);
+        next.delete(groupId);
+        return next;
+      });
+    },
+    [updateExpandedGroups],
   );
 
   const expandAllGroups = useCallback(
-    () => updateCollapsedGroups(() => EMPTY_GROUP_SET),
-    [updateCollapsedGroups],
+    () => updateExpandedGroups(() => new Set(groupIds)),
+    [groupIds, updateExpandedGroups],
   );
   const collapseAllGroups = useCallback(
-    () => updateCollapsedGroups(() => new Set(groupIds)),
-    [groupIds, updateCollapsedGroups],
+    () => updateExpandedGroups(() => EMPTY_GROUP_SET),
+    [updateExpandedGroups],
   );
 
   return {
     resourceGroups,
+    groupRootCandidates,
     expandedGroups,
     expandGroup,
     collapseGroup,
@@ -424,6 +449,8 @@ interface GroupRowProps {
   excludedCount: number;
   includeResources: (...names: string[]) => void;
   excludeResources: (...names: string[]) => void;
+  rootCandidates: ModGroupRule[];
+  setRootRule: (path: string) => void;
   handleOpenChange: (open: boolean) => void;
 }
 
@@ -433,6 +460,8 @@ function GroupRow({
   excludedCount,
   includeResources,
   excludeResources,
+  rootCandidates,
+  setRootRule,
   handleOpenChange,
 }: GroupRowProps) {
   return (
@@ -469,6 +498,11 @@ function GroupRow({
           </span>
         </Button>
       </CollapsibleTrigger>
+      <GroupRootSelect
+        groupName={group.name}
+        candidates={rootCandidates}
+        setRootRule={setRootRule}
+      />
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="inline-flex">
@@ -513,6 +547,44 @@ function GroupRow({
   );
 }
 
+interface GroupRootSelectProps {
+  groupName: string;
+  candidates: ModGroupRule[];
+  setRootRule: (path: string) => void;
+}
+
+function GroupRootSelect({
+  groupName,
+  candidates,
+  setRootRule,
+}: GroupRootSelectProps) {
+  if (candidates.length === 0) return null;
+
+  return (
+    <Select onValueChange={setRootRule}>
+      <SelectTrigger
+        aria-label={`Set mod root for ${groupName}`}
+        size="sm"
+        className="h-8 border-transparent bg-transparent px-2 text-xs text-muted-foreground hover:bg-muted"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        Root
+      </SelectTrigger>
+      <SelectContent align="end" position="popper" className="z-60 min-w-72">
+        <SelectGroup>
+          <SelectLabel>Set group root</SelectLabel>
+          {candidates.map((candidate) => (
+            <SelectItem key={candidate.path} value={candidate.path}>
+              <span className="font-mono text-xs">{candidate.path}</span>
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  );
+}
+
 interface ScrollingGroupRowProps {
   group: ResourceModGroup;
   isExpanded: boolean;
@@ -528,7 +600,7 @@ function ScrollingGroupRow({
     <div
       className={cn(
         "flex h-9 min-w-0 flex-1 items-center gap-1 rounded-md border border-transparent pr-2 hover:bg-muted/40",
-        "pointer-events-none pr-7.25 pl-2.25 font-sans",
+        "pointer-events-none pr-24.75 pl-2.25 font-sans",
         group.isLoose && "bg-muted/30 text-muted-foreground",
       )}
     >

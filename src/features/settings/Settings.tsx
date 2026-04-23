@@ -23,9 +23,14 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/InputGroup";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 import { Overline } from "@/components/ui/Typography";
 import { cn } from "@/lib/cn";
-import { useDataStore } from "@/stores/data";
+import {
+  useDataStore,
+  useModGroupRuleActions,
+  useModGroupRules,
+} from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
@@ -81,6 +86,10 @@ function Settings() {
 
   const reduceMotion = useSettingsStore((state) => state.reduceMotion);
   const setReduceMotion = useSettingsStore((state) => state.setReduceMotion);
+
+  // Chargen Grouping
+  const modGroupRules = useModGroupRules();
+  const { removeModGroupRule } = useModGroupRuleActions();
 
   // Reset Settings
   const resetSettings = useSettingsStore((state) => state.reset);
@@ -191,6 +200,53 @@ function Settings() {
         </Field>
       </SettingsSection>
 
+      <SettingsSection title="Chargen Grouping">
+        <Field>
+          <FieldContent>
+            <FieldLabel>Saved Group Roots</FieldLabel>
+            <FieldDescription>
+              Folder roots that override automatic mod detection in the chargen
+              inspector.
+            </FieldDescription>
+          </FieldContent>
+          {modGroupRules.length > 0 ? (
+            <ScrollArea className="mt-2 h-72 rounded-md border">
+              <div className="flex flex-col gap-2 p-2">
+                {modGroupRules.map((rule) => (
+                  <div
+                    key={rule.path}
+                    className="flex min-w-0 items-center justify-between gap-3 rounded-md bg-muted/30 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">
+                        {rule.name}
+                      </div>
+                      <div className="truncate font-mono text-xs text-muted-foreground">
+                        {rule.path}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeModGroupRule(rule.path)}
+                    >
+                      <Trash2Icon className="size-4" />
+                      <span className="sr-only">
+                        Remove group root for {rule.name}
+                      </span>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground">
+              No custom chargen group roots have been saved.
+            </p>
+          )}
+        </Field>
+      </SettingsSection>
+
       {/* Data Management Section (Danger Zone) */}
       <SettingsSection title="Data Management" danger>
         {/* Reset Settings */}
@@ -240,7 +296,8 @@ function Settings() {
           <FieldContent>
             <FieldLabel>Clear Application Data</FieldLabel>
             <FieldDescription>
-              Permanently remove all scanned asset data and temporary files.
+              Permanently remove saved exclusions, grouping preferences, and
+              temporary scan data.
             </FieldDescription>
           </FieldContent>
           <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -254,8 +311,9 @@ function Settings() {
               <DialogHeader>
                 <DialogTitle>Clear all application data?</DialogTitle>
                 <DialogDescription>
-                  This will remove all scanned asset data from the application
-                  cache. You will need to rescan your folders.
+                  This will remove saved exclusions, grouping preferences, and
+                  scanned asset data from the application cache. You will need
+                  to rescan your folders.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>

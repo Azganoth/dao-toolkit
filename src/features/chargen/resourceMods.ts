@@ -120,11 +120,21 @@ export interface ResourceModGroup<T extends Resource = Resource> {
   resources: T[];
 }
 
+export interface ModGroupRule {
+  path: string;
+  name: string;
+}
+
 type ResourceModGroupSource = Omit<ResourceModGroup, "resources">;
 
 interface NormalizedScanRoot {
   path: string;
   lowerPath: string;
+}
+
+interface PreparedModGroupRule extends ModGroupRule {
+  lowerPath: string;
+  depth: number;
 }
 
 function normalizeSegment(segment: string) {
@@ -275,8 +285,55 @@ function toSourcePath(parentSegments: string[], index: number) {
   return parentSegments.slice(0, index + 1).join(PATH_SEPARATOR);
 }
 
+function normalizeRulePath(path: string) {
+  return splitPath(path).join(PATH_SEPARATOR);
+}
+
+export function createModGroupRule(path: string): ModGroupRule {
+  const normalizedPath = normalizeRulePath(path);
+  const name = splitPath(normalizedPath).at(-1) ?? normalizedPath;
+
+  return {
+    path: normalizedPath,
+    name,
+  };
+}
+
 function createGroupId(sourcePath: string | undefined, name: string) {
   return sourcePath ? `path:${sourcePath}` : `name:${name}`;
+}
+
+function prepareModGroupRules(rules: ModGroupRule[]) {
+  return rules
+    .map((rule) => {
+      const normalized = createModGroupRule(rule.path);
+      const segments = splitPath(normalized.path);
+
+      return {
+        ...normalized,
+        lowerPath: normalized.path.toLowerCase(),
+        depth: segments.length,
+      };
+    })
+    .filter((rule) => rule.path.length > 0)
+    .sort((a, b) => {
+      if (b.depth !== a.depth) return b.depth - a.depth;
+      return b.path.length - a.path.length;
+    });
+}
+
+function findMatchingRule(
+  parentSegments: string[],
+  rules: PreparedModGroupRule[],
+) {
+  const parentPath = parentSegments.join(PATH_SEPARATOR);
+  const lowerParentPath = parentPath.toLowerCase();
+
+  return rules.find(
+    (rule) =>
+      lowerParentPath === rule.lowerPath ||
+      lowerParentPath.startsWith(`${rule.lowerPath}${PATH_SEPARATOR}`),
+  );
 }
 
 function inferFromParentSegments(
@@ -333,6 +390,7 @@ export function inferResourceMod(resource: Resource, scanPath: string) {
 function inferResourceModFromScanRoot(
   resource: Resource,
   scanRoot: NormalizedScanRoot,
+  rules: PreparedModGroupRule[] = [],
 ) {
   if (!resource.path) {
     return {
@@ -343,6 +401,16 @@ function inferResourceModFromScanRoot(
   }
 
   const { parentSegments } = getRelativeParentSegments(resource.path, scanRoot);
+  const rule = findMatchingRule(parentSegments, rules);
+
+  if (rule) {
+    return {
+      id: createGroupId(rule.path, rule.name),
+      name: rule.name,
+      sourcePath: rule.path,
+      isLoose: false,
+    };
+  }
 
   return inferFromParentSegments(parentSegments);
 }
@@ -350,12 +418,18 @@ function inferResourceModFromScanRoot(
 export function groupResourcesByMod<T extends Resource>(
   resources: T[],
   scanPath: string,
+  rules: ModGroupRule[] = [],
 ) {
   const groups = new Map<string, ResourceModGroup<T>>();
   const scanRoot = createScanRoot(scanPath);
+  const preparedRules = prepareModGroupRules(rules);
 
   for (const resource of resources) {
-    const inference = inferResourceModFromScanRoot(resource, scanRoot);
+    const inference = inferResourceModFromScanRoot(
+      resource,
+      scanRoot,
+      preparedRules,
+    );
     const group = groups.get(inference.id);
 
     if (group) {
@@ -372,4 +446,38 @@ export function groupResourcesByMod<T extends Resource>(
   }
 
   return Array.from(groups.values());
+}
+
+export function getModGroupRootCandidates(
+  resources: Resource[],
+  scanPath: string,
+) {
+  const scanRoot = createScanRoot(scanPath);
+  const candidates = new Map<string, ModGroupRule & { depth: number }>();
+
+  for (const resource of resources) {
+    if (!resource.path) continue;
+
+    const { parentSegments } = getRelativeParentSegments(
+      resource.path,
+      scanRoot,
+    );
+
+    parentSegments.forEach((_, index) => {
+      const path = toSourcePath(parentSegments, index);
+      if (!path || candidates.has(path)) return;
+
+      candidates.set(path, {
+        ...createModGroupRule(path),
+        depth: index + 1,
+      });
+    });
+  }
+
+  return Array.from(candidates.values())
+    .sort((a, b) => {
+      if (a.depth !== b.depth) return a.depth - b.depth;
+      return a.path.localeCompare(b.path);
+    })
+    .map(({ name, path }) => ({ name, path }));
 }
