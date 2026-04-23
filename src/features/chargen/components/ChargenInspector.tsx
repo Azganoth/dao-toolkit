@@ -452,7 +452,7 @@ function GroupRow({
           <span className="shrink-0 font-mono text-xs text-muted-foreground">
             {excludedCount > 0 &&
               `${excludedCount.toLocaleString()} excluded · `}
-            {group.resources.length.toLocaleString()} custom
+            {group.resources.length.toLocaleString()} items
           </span>
         </Button>
       </CollapsibleTrigger>

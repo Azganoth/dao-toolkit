@@ -36,7 +36,7 @@ function ChargenSummaryRow({
           </span>
         )}
         <span className="rounded-sm bg-primary/50 px-1.5 py-0.5">
-          {resources.length.toLocaleString()} custom
+          {resources.length.toLocaleString()} items
         </span>
         <Tooltip>
           <TooltipTrigger asChild>
