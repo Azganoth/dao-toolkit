@@ -50,7 +50,9 @@ function ChargenSummaryRow({
               <span className="sr-only">Choose custom files for {title}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Manage resource exclusions</TooltipContent>
+          <TooltipContent side="right">
+            Manage resource exclusions
+          </TooltipContent>
         </Tooltip>
       </div>
     </div>

@@ -9,11 +9,18 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/Empty";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
-import { H4, P } from "@/components/ui/Typography";
 import { chargenApi } from "@/features/chargen/api";
 import { useChargenStaleExclusions } from "@/features/chargen/hooks/useChargenStaleExclusions";
 import { useChargenStore } from "@/features/chargen/stores/chargen";
@@ -235,22 +242,20 @@ function ChargenGenerator() {
         </Button>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="inline-flex w-full">
-              <Button
-                variant={scan ? "default" : "outline"}
-                size="xl"
-                onClick={handleGenerate}
-                disabled={isBusy || !scan}
-                className="w-full min-w-40 text-base"
-              >
-                {pendingAction === "generate" ? (
-                  <Loader2Icon className="size-5 animate-spin" />
-                ) : (
-                  <SaveIcon className="size-5" />
-                )}
-                Generate
-              </Button>
-            </span>
+            <Button
+              variant={scan ? "default" : "outline"}
+              size="xl"
+              onClick={handleGenerate}
+              disabled={isBusy || !scan}
+              className="w-full min-w-40 text-base"
+            >
+              {pendingAction === "generate" ? (
+                <Loader2Icon className="size-5 animate-spin" />
+              ) : (
+                <SaveIcon className="size-5" />
+              )}
+              Generate
+            </Button>
           </TooltipTrigger>
           {!scan && (
             <TooltipContent>
@@ -331,26 +336,29 @@ function ChargenGenerator() {
             exit="hidden"
             className="flex min-h-[calc(100vh-18rem)] flex-col items-center justify-center gap-4 px-6 py-16 text-center text-muted-foreground"
           >
-            <Wand2Icon className="size-10 opacity-70" />
-            <div className="max-w-md">
-              <H4 className="mb-8 text-muted-foreground">
-                No chargen data loaded
-              </H4>
-              <P className="text-muted-foreground">
-                Scan your override folder to find custom character creation
-                resources. You can review exclusions before generating
-                chargenmorphcfg.xml.
-              </P>
-            </div>
-            <P className="max-w-xl text-muted-foreground">
-              {overridePath ? (
-                <>
-                  Ready to scan <strong>{shortenPath(overridePath)}</strong>.
-                </>
-              ) : (
-                <strong>Choose an override folder in Settings first.</strong>
-              )}
-            </P>
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia>
+                  <Wand2Icon className="size-12" />
+                </EmptyMedia>
+                <EmptyTitle>No chargen data loaded</EmptyTitle>
+                <EmptyDescription className="max-w-xs text-pretty">
+                  Scan your override folder to find custom character creation
+                  resources. You can review exclusions before generating
+                  chargenmorphcfg.xml.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent className="">
+                {overridePath ? (
+                  <>
+                    <span>Ready to scan:</span>
+                    <strong>{shortenPath(overridePath)}</strong>
+                  </>
+                ) : (
+                  <strong>Choose an override folder in Settings first.</strong>
+                )}
+              </EmptyContent>
+            </Empty>
           </motion.div>
         )}
       </AnimatePresence>

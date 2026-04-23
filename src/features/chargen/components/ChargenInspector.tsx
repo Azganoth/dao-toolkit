@@ -10,6 +10,13 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/Empty";
+import {
   Select,
   SelectContent,
   SelectGroup,
@@ -22,7 +29,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
-import { P } from "@/components/ui/Typography";
 import {
   VirtualList,
   VirtualListContent,
@@ -48,12 +54,12 @@ import {
 import type { Resource } from "@/types/chargen";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import {
-  BanIcon,
-  CheckIcon,
   ChevronRightIcon,
   ChevronsDownUpIcon,
   ChevronsUpDownIcon,
   FolderOpenIcon,
+  ListCheckIcon,
+  ListXIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
@@ -190,8 +196,8 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
             {resources.length.toLocaleString()}{" "}
             {pluralize(resources.length, "resource")} from{" "}
             {resourceGroups.length.toLocaleString()} detected{" "}
-            {pluralize(resourceGroups.length, "mod")}. Choose which resources
-            will show in the character creation.
+            {pluralize(resourceGroups.length, "mod")}. Review custom resources
+            by detected mod; excluded resources are skipped during generation.
           </DialogDescription>
         </DialogHeader>
         <VirtualList
@@ -260,9 +266,20 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
             </VirtualListItems>
           </VirtualListContent>
           <VirtualListEmpty>
-            <P className="text-muted-foreground">
-              No custom resources found for this group.
-            </P>
+            <Empty className="h-full min-h-64 rounded-md bg-transparent text-muted-foreground">
+              <EmptyHeader>
+                <EmptyMedia className="text-muted-foreground/70">
+                  <FolderOpenIcon className="size-9" />
+                </EmptyMedia>
+                <EmptyTitle className="text-base text-foreground">
+                  No custom resources found
+                </EmptyTitle>
+                <EmptyDescription className="max-w-sm text-pretty">
+                  This category has no custom files in the current scan, so
+                  there is nothing to include or exclude here.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           </VirtualListEmpty>
         </VirtualList>
         {resources.length > 0 && (
@@ -281,35 +298,31 @@ function ChargenInspector({ target, onClose }: CharenInspectorProps) {
               <div className="flex justify-end gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="inline-flex">
-                      <Button
-                        variant="ghost"
-                        size="icon-lg"
-                        onClick={expandAllGroups}
-                        disabled={areAllGroupsExpanded}
-                      >
-                        <ChevronsUpDownIcon />
-                        <span className="sr-only">Expand all groups</span>
-                      </Button>
-                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon-lg"
+                      onClick={expandAllGroups}
+                      disabled={areAllGroupsExpanded}
+                    >
+                      <ChevronsUpDownIcon />
+                      <span className="sr-only">Expand all groups</span>
+                    </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Expand all groups</TooltipContent>
+                  <TooltipContent>Expand all mod groups</TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="inline-flex">
-                      <Button
-                        variant="ghost"
-                        size="icon-lg"
-                        onClick={collapseAllGroups}
-                        disabled={areAllGroupsCollapsed}
-                      >
-                        <ChevronsDownUpIcon />
-                        <span className="sr-only">Collapse all groups</span>
-                      </Button>
-                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon-lg"
+                      onClick={collapseAllGroups}
+                      disabled={areAllGroupsCollapsed}
+                    >
+                      <ChevronsDownUpIcon />
+                      <span className="sr-only">Collapse all groups</span>
+                    </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Collapse all groups</TooltipContent>
+                  <TooltipContent>Collapse all mod groups</TooltipContent>
                 </Tooltip>
               </div>
               <div className="flex flex-col-reverse gap-2 sm:flex-row">
@@ -505,43 +518,43 @@ function GroupRow({
       />
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                includeResources(...group.resources.map((r) => r.name))
-              }
-              disabled={excludedCount === 0}
-            >
-              <CheckIcon className="size-4.5" />
-              <span className="sr-only">
-                Include all resources from {group.name}
-              </span>
-            </Button>
-          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              includeResources(...group.resources.map((r) => r.name))
+            }
+            disabled={excludedCount === 0}
+          >
+            <ListCheckIcon className="size-4.5" />
+            <span className="sr-only">
+              Include all resources from {group.name}
+            </span>
+          </Button>
         </TooltipTrigger>
-        <TooltipContent>Include group</TooltipContent>
+        <TooltipContent side="right">
+          Include every resource in this group
+        </TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                excludeResources(...group.resources.map((r) => r.name))
-              }
-              disabled={excludedCount === group.resources.length}
-            >
-              <BanIcon className="size-4.5" />
-              <span className="sr-only">
-                Exclude all resources from {group.name}
-              </span>
-            </Button>
-          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              excludeResources(...group.resources.map((r) => r.name))
+            }
+            disabled={excludedCount === group.resources.length}
+          >
+            <ListXIcon className="size-4.5" />
+            <span className="sr-only">
+              Exclude all resources from {group.name}
+            </span>
+          </Button>
         </TooltipTrigger>
-        <TooltipContent>Exclude group</TooltipContent>
+        <TooltipContent side="right">
+          Exclude every resource in this group
+        </TooltipContent>
       </Tooltip>
     </Collapsible>
   );
@@ -561,27 +574,40 @@ function GroupRootSelect({
   if (candidates.length === 0) return null;
 
   return (
-    <Select onValueChange={setRootRule}>
-      <SelectTrigger
-        aria-label={`Set mod root for ${groupName}`}
-        size="sm"
-        className="h-8 border-transparent bg-transparent px-2 text-xs text-muted-foreground hover:bg-muted"
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        Root
-      </SelectTrigger>
-      <SelectContent align="end" position="popper" className="z-60 min-w-72">
-        <SelectGroup>
-          <SelectLabel>Set group root</SelectLabel>
-          {candidates.map((candidate) => (
-            <SelectItem key={candidate.path} value={candidate.path}>
-              <span className="font-mono text-xs">{candidate.path}</span>
-            </SelectItem>
-          ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span>
+          <Select onValueChange={setRootRule}>
+            <SelectTrigger
+              aria-label={`Choose group root for ${groupName}`}
+              size="sm"
+              className="h-8 border-transparent bg-transparent px-2 text-xs text-muted-foreground hover:bg-muted"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              Root
+            </SelectTrigger>
+            <SelectContent
+              align="end"
+              position="popper"
+              className="z-60 min-w-72"
+            >
+              <SelectGroup>
+                <SelectLabel>Use folder as group root</SelectLabel>
+                {candidates.map((candidate) => (
+                  <SelectItem key={candidate.path} value={candidate.path}>
+                    <span className="font-mono text-xs">{candidate.path}</span>
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="right">
+        Choose the mod folder that defines this group.
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -674,14 +700,13 @@ function ResourceRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground opacity-70 group-hover/resource:opacity-100"
                 onClick={() => handleReveal(resource.path)}
               >
                 <FolderOpenIcon className="size-5" />
                 <span className="sr-only">Open file location</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Open file location</TooltipContent>
+            <TooltipContent side="right">Open file location</TooltipContent>
           </Tooltip>
         )}
       </div>
