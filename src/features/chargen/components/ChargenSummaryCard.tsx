@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import type { ChargenInspectorTarget } from "@/features/chargen/components/ChargenInspector";
+import type { ChargenInspectorSelection } from "@/features/chargen/components/ChargenInspector";
 import { ChargenSummaryRow } from "@/features/chargen/components/ChargenSummaryRow";
 import type { HairResource, Resource, ResourceGroup } from "@/types/chargen";
 import { useCallback } from "react";
@@ -27,7 +27,7 @@ export interface ChargenFaceSummaryCardProps {
     hairs: ResourceGroup<HairResource>;
     beards?: ResourceGroup<Resource>;
   };
-  onInspect: (target: ChargenInspectorTarget) => void;
+  onInspect: (selection: ChargenInspectorSelection) => void;
 }
 
 function ChargenFaceSummaryCard({
@@ -36,8 +36,8 @@ function ChargenFaceSummaryCard({
   onInspect,
 }: ChargenFaceSummaryCardProps) {
   const handleInspect = useCallback(
-    (target: ChargenInspectorTarget) => {
-      onInspect({ ...target, title: `${title} - ${target.title}` });
+    (selection: ChargenInspectorSelection) => {
+      onInspect({ ...selection, title: `${title} - ${selection.title}` });
     },
     [title, onInspect],
   );

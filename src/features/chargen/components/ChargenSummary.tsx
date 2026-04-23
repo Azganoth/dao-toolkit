@@ -7,20 +7,22 @@ import { type ChargenData } from "@/types/chargen";
 import { useState } from "react";
 import {
   ChargenInspector,
+  type ChargenInspectorSelection,
   type ChargenInspectorTarget,
 } from "./ChargenInspector";
 
 interface ChargenSummaryProps {
   data: ChargenData;
+  scanPath: string;
 }
 
-function ChargenSummary({ data }: ChargenSummaryProps) {
+function ChargenSummary({ data, scanPath }: ChargenSummaryProps) {
   const [inspector, setInspector] = useState<ChargenInspectorTarget | null>(
     null,
   );
 
-  const handleInspect = (target: ChargenInspectorTarget) => {
-    setInspector(target);
+  const handleInspect = (selection: ChargenInspectorSelection) => {
+    setInspector({ ...selection, scanPath });
   };
 
   return (

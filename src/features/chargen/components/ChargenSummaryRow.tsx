@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
-import type { ChargenInspectorTarget } from "@/features/chargen/components/ChargenInspector";
+import type { ChargenInspectorSelection } from "@/features/chargen/components/ChargenInspector";
 import { useExcludedResourcesSet } from "@/stores/data";
 import type { Resource, ResourceGroup } from "@/types/chargen";
 import { ListChecksIcon } from "lucide-react";
@@ -12,7 +12,7 @@ import { ListChecksIcon } from "lucide-react";
 export interface ChargenSummaryRowProps {
   title: string;
   resourceGroup: ResourceGroup<Resource>;
-  onInspect: (target: ChargenInspectorTarget) => void;
+  onInspect: (selection: ChargenInspectorSelection) => void;
 }
 
 function ChargenSummaryRow({

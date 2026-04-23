@@ -293,7 +293,7 @@ function ChargenGenerator() {
             exit="hidden"
             className="mt-6 flex flex-col gap-4"
           >
-            <ChargenSummary data={scan.data} />
+            <ChargenSummary data={scan.data} scanPath={scan.path} />
             <ScanMetadata
               path={scan.path}
               scannedAt={scan.scannedAt}
