@@ -2,7 +2,6 @@
 import { includeIgnoreFile } from "@eslint/compat";
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier";
-import onlyWarn from "eslint-plugin-only-warn";
 import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 import { defineConfig } from "eslint/config";
@@ -37,12 +36,6 @@ export default defineConfig(
       globals: {
         ...globals.serviceworker,
       },
-    },
-  },
-  {
-    plugins: {
-      // @ts-expect-error 'eslint-plugin-only-warn' does not provide type definitions
-      onlyWarn,
     },
   },
   prettier,
