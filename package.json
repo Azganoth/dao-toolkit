@@ -11,6 +11,10 @@
     "lint": "pnpm run \"/lint:./\"",
     "lint:tsc": "tsc -b",
     "lint:eslint": "eslint . --max-warnings 0",
+    "lint:cargo": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "check": "pnpm lint && pnpm run \"/check:./\"",
+    "check:prettier": "prettier --check .",
+    "check:cargo-fmt": "cargo +nightly fmt --manifest-path src-tauri/Cargo.toml --check",
     "format": "pnpm run \"/format:./\"",
     "format:prettier": "prettier --write .",
     "format:cargo": "cargo +nightly fmt --manifest-path src-tauri/Cargo.toml"
