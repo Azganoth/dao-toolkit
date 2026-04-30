@@ -15,7 +15,7 @@ import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import { setTheme as tauriSetTheme } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { SearchXIcon, SettingsIcon, UserCheckIcon } from "lucide-react";
+import { SettingsIcon, UserCheckIcon } from "lucide-react";
 import { useEffect } from "react";
 
 const updateTheme = async (theme: SettingsStore["theme"]) => {
@@ -55,16 +55,12 @@ function App() {
       <main className="mt-8 flex-1 overflow-hidden p-4">
         <Tabs
           className="flex h-full w-full flex-col gap-4"
-          defaultValue="settings"
+          defaultValue="chargen"
         >
           <TabsList className="w-full flex-none">
             <TabsTrigger value="chargen">
               <UserCheckIcon className="size-5" />
               Chargen
-            </TabsTrigger>
-            <TabsTrigger value="scanner" disabled>
-              <SearchXIcon className="size-5" />
-              Scanner
             </TabsTrigger>
             <TabsTrigger value="settings" className="ml-auto">
               <SettingsIcon className="size-5" />
