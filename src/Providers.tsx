@@ -1,3 +1,4 @@
+/* v8 ignore file */
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { useSettingsStore } from "@/stores/settings";
 import { MotionConfig } from "motion/react";

@@ -9,6 +9,9 @@ use crate::core::chargen::Chargen;
 mod commands;
 mod core;
 
+#[cfg(test)]
+mod test_utils;
+
 #[derive(Default)]
 pub struct ChargenContext {
     pub id: Option<String>,
