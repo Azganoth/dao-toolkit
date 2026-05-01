@@ -160,8 +160,16 @@ fn process_resource(chargen: &mut Chargen, resource: &str, path: &Path) {
 /* Cleanup */
 
 pub fn delete_config_files(path: &Path) -> Result<usize> {
+    let metadata = fs::metadata(path)
+        .with_context(|| format!("Failed to read override directory '{}'", path.display()))?;
+    if !metadata.is_dir() {
+        anyhow::bail!("Override path is not a directory: {}", path.display());
+    }
+
     let mut count = 0;
-    for entry in WalkDir::new(path).into_iter().filter_map(Result::ok) {
+    for entry in WalkDir::new(path) {
+        let entry =
+            entry.with_context(|| format!("Failed to read path under '{}'", path.display()))?;
         if entry.file_type().is_file() && entry.file_name() == "chargenmorphcfg.xml" {
             fs::remove_file(entry.path())
                 .with_context(|| format!("Failed to remove file: {}", entry.path().display()))?;
@@ -228,4 +236,241 @@ fn write_hair_resource<W: Write>(writer: &mut Writer<W>, res: &HairResource) -> 
         "resource",
         &[("name", &res.name), ("cut", &res.cut)],
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{collections::HashSet, fs};
+
+    use super::*;
+    use crate::{
+        core::chargen::models::{Filterable, HairResource, Resource},
+        test_utils::{collect_xml_resource_paths, TestDir},
+    };
+
+    #[test]
+    fn scan_from_path_rejects_missing_paths() {
+        let temp = TestDir::new();
+        let missing = temp.path().join("missing");
+
+        let err = scan_from_path(&missing).expect_err("missing path should fail");
+
+        assert!(
+            err.to_string()
+                .contains("Failed to read override directory"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn scan_from_path_rejects_files() {
+        let temp = TestDir::new();
+        temp.write_file("not-a-directory.txt");
+
+        let err = scan_from_path(&temp.path().join("not-a-directory.txt"))
+            .expect_err("file path should fail");
+
+        assert!(
+            err.to_string().contains("Override path is not a directory"),
+            "unexpected error: {err}"
+        );
+    }
+
+    #[test]
+    fn scan_from_path_classifies_custom_resources_and_ignores_marked_paths() {
+        let temp = TestDir::new();
+        temp.write_file("Mod/hm_cps_custom.mop");
+        temp.write_file("Mod/hf_har_custom_0.mmh");
+        temp.write_file("Mod/hf_har_custom_1.mmh");
+        temp.write_file("Mod/dm_brd_custom_0.mmh");
+        temp.write_file("Mod/t3_har_fire.tnt");
+        temp.write_file("Mod/uh_hed_custom_0d.dds");
+        temp.write_file("Mod/uh_tat_custom_0t.dds");
+        temp.write_file("Ignored #ignorechargen/hm_cps_ignored.mop");
+
+        let (_chargen, data) = scan_from_path(temp.path()).expect("scan should succeed");
+
+        assert_eq!(data.heads.hm.custom.len(), 1);
+        assert_eq!(data.heads.hm.custom[0].name, "hm_cps_custom.mop");
+        assert!(data.heads.hm.custom[0]
+            .path
+            .as_deref()
+            .is_some_and(|path| path.ends_with("hm_cps_custom.mop")));
+        assert_eq!(data.hairs.hf.custom.len(), 1);
+        assert_eq!(data.hairs.hf.custom[0].name, "hf_har_custom_0");
+        assert_eq!(data.hairs.hf.custom[0].cut, "1");
+        assert!(data.hairs.hf.custom[0]
+            .path
+            .as_deref()
+            .is_some_and(|path| path.ends_with("hf_har_custom_0.mmh")));
+        assert_eq!(data.beards.dm.custom.len(), 1);
+        assert_eq!(data.beards.dm.custom[0].name, "dm_brd_custom_0");
+        assert_eq!(data.tints.hair.custom.len(), 1);
+        assert_eq!(data.tints.hair.custom[0].name, "t3_har_fire");
+        assert_eq!(data.textures.skin.custom.len(), 1);
+        assert_eq!(data.textures.skin.custom[0].name, "uh_hed_custom_0d");
+        assert_eq!(data.textures.tattoo.custom.len(), 1);
+        assert_eq!(data.textures.tattoo.custom[0].name, "uh_tat_custom_0t");
+    }
+
+    #[test]
+    fn scan_from_path_classifies_all_tint_categories() {
+        let temp = TestDir::new();
+        temp.write_file("Mod/t3_har_fire.tnt");
+        temp.write_file("Mod/t3_skn_pale.tnt");
+        temp.write_file("Mod/t3_eye_green.tnt");
+        temp.write_file("Mod/t3_mue_shadow.tnt");
+        temp.write_file("Mod/t3_mub_blush.tnt");
+        temp.write_file("Mod/t3_mul_lip.tnt");
+        temp.write_file("Mod/t3_stb_brow.tnt");
+        temp.write_file("Mod/t3_tat_mark.tnt");
+        temp.write_file("Mod/t3_unknown_skip.tnt");
+
+        let (_chargen, data) = scan_from_path(temp.path()).expect("scan should succeed");
+
+        assert_eq!(data.tints.hair.custom[0].name, "t3_har_fire");
+        assert_eq!(data.tints.skin.custom[0].name, "t3_skn_pale");
+        assert_eq!(data.tints.eye.custom[0].name, "t3_eye_green");
+        assert_eq!(data.tints.eye_makeup.custom[0].name, "t3_mue_shadow");
+        assert_eq!(data.tints.blush_makeup.custom[0].name, "t3_mub_blush");
+        assert_eq!(data.tints.lip_makeup.custom[0].name, "t3_mul_lip");
+        assert_eq!(data.tints.brow.custom[0].name, "t3_stb_brow");
+        assert_eq!(data.tints.tattoo.custom[0].name, "t3_tat_mark");
+    }
+
+    #[test]
+    fn filter_removes_resources_by_name_across_chargen_groups() {
+        let mut chargen = Chargen::default();
+        let disabled_head = "hm_cps_disabled.mop".to_string();
+        let disabled_hair = "hf_har_disabled_0".to_string();
+        let disabled = HashSet::from([&disabled_head, &disabled_hair]);
+
+        chargen
+            .heads
+            .hm
+            .insert(Resource::from("hm_cps_enabled.mop"));
+        chargen
+            .heads
+            .hm
+            .insert(Resource::from(disabled_head.clone()));
+        chargen.hairs.hf.insert(HairResource {
+            name: "hf_har_enabled_0".to_string(),
+            cut: "1".to_string(),
+            path: None,
+        });
+        chargen.hairs.hf.insert(HairResource {
+            name: disabled_hair.clone(),
+            cut: "1".to_string(),
+            path: None,
+        });
+
+        chargen.filter(&disabled);
+
+        assert!(chargen
+            .heads
+            .hm
+            .iter()
+            .any(|r| r.name == "hm_cps_enabled.mop"));
+        assert!(!chargen.heads.hm.iter().any(|r| r.name == disabled_head));
+        assert!(chargen
+            .hairs
+            .hf
+            .iter()
+            .any(|r| r.name == "hf_har_enabled_0"));
+        assert!(!chargen.hairs.hf.iter().any(|r| r.name == disabled_hair));
+    }
+
+    #[test]
+    fn save_config_file_writes_declaration_and_root() {
+        let temp = TestDir::new();
+        let mut chargen = Chargen::default();
+        chargen.heads.hm.insert(Resource::from("hm_cps_custom.mop"));
+        chargen.hairs.hf.insert(HairResource {
+            name: "hf_har_custom_0".to_string(),
+            cut: "1".to_string(),
+            path: None,
+        });
+
+        save_config_file(&chargen, temp.path()).expect("save should succeed");
+
+        let xml = fs::read_to_string(temp.path().join("chargenmorphcfg.xml"))
+            .expect("generated config should be readable");
+
+        assert!(xml.starts_with(r#"<?xml version="1.0" encoding="utf-8"?>"#));
+        assert!(xml.contains("<morph_config>"));
+    }
+
+    #[test]
+    fn save_config_file_writes_expected_xml_structure() {
+        let temp = TestDir::new();
+        let mut chargen = Chargen::default();
+        chargen.heads.hm.insert(Resource::from("hm_cps_custom.mop"));
+        chargen.hairs.hf.insert(HairResource {
+            name: "hf_har_custom_0".to_string(),
+            cut: "1".to_string(),
+            path: None,
+        });
+        chargen.tints.hair.insert(Resource::from("t3_har_fire"));
+        chargen
+            .textures
+            .skin
+            .insert(Resource::from("uh_hed_custom_0d"));
+
+        save_config_file(&chargen, temp.path()).expect("save should succeed");
+
+        let xml = fs::read_to_string(temp.path().join("chargenmorphcfg.xml"))
+            .expect("generated config should be readable");
+        let resources = collect_xml_resource_paths(&xml);
+
+        assert!(resources.contains(&"morph_config/heads/human_male:hm_cps_custom.mop".to_string()));
+        assert!(resources
+            .contains(&"morph_config/hairs/human_female:hf_har_custom_0:cut=1".to_string()));
+        assert!(resources.contains(&"morph_config/hair_colors:t3_har_fire".to_string()));
+        assert!(resources.contains(&"morph_config/skins:uh_hed_custom_0d".to_string()));
+    }
+
+    #[test]
+    fn delete_config_files_recursively_removes_only_chargen_configs() {
+        let temp = TestDir::new();
+        temp.write_file("chargenmorphcfg.xml");
+        temp.write_file("Nested/chargenmorphcfg.xml");
+        temp.write_file("Nested/keep.xml");
+        temp.write_file("Nested/chargenmorphcfg.backup.xml");
+
+        let count = delete_config_files(temp.path()).expect("delete should succeed");
+
+        assert_eq!(count, 2);
+        assert!(!temp.path().join("chargenmorphcfg.xml").exists());
+        assert!(!temp.path().join("Nested/chargenmorphcfg.xml").exists());
+        assert!(temp.path().join("Nested/keep.xml").exists());
+        assert!(temp
+            .path()
+            .join("Nested/chargenmorphcfg.backup.xml")
+            .exists());
+    }
+
+    #[test]
+    fn delete_config_files_rejects_invalid_cleanup_roots() {
+        let temp = TestDir::new();
+        temp.write_file("not-a-directory.txt");
+
+        let missing = temp.path().join("missing");
+        let missing_err =
+            delete_config_files(&missing).expect_err("missing cleanup root should fail");
+        assert!(
+            missing_err
+                .to_string()
+                .contains("Failed to read override directory"),
+            "unexpected error: {missing_err}"
+        );
+
+        let file_err = delete_config_files(&temp.path().join("not-a-directory.txt"))
+            .expect_err("file cleanup root should fail");
+        assert!(
+            file_err
+                .to_string()
+                .contains("Override path is not a directory"),
+            "unexpected error: {file_err}"
+        );
+    }
 }

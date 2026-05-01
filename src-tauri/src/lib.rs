@@ -1,10 +1,10 @@
-use std::{path::PathBuf, sync::Mutex};
+use std::sync::Mutex;
 
 use tauri::Manager;
 use tauri_plugin_frame::FramePluginBuilder;
 use tauri_plugin_window_state::StateFlags;
 
-use crate::core::chargen::Chargen;
+use crate::core::chargen::ChargenSession;
 
 mod commands;
 mod core;
@@ -12,19 +12,12 @@ mod core;
 #[cfg(test)]
 mod test_utils;
 
-#[derive(Default)]
-pub struct ChargenContext {
-    pub id: Option<String>,
-    pub data: Option<Chargen>,
-    pub path: Option<PathBuf>,
-}
-
-pub struct ChargenState(pub Mutex<ChargenContext>);
+pub struct ChargenState(pub Mutex<ChargenSession>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .manage(ChargenState(Mutex::new(ChargenContext::default())))
+        .manage(ChargenState(Mutex::new(ChargenSession::default())))
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             let _ = app
                 .get_webview_window("main")

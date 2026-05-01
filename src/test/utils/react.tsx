@@ -7,6 +7,7 @@ import {
   type RenderHookOptions,
   type RenderOptions,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
 import { afterEach } from "vitest";
 
@@ -27,6 +28,16 @@ function render(ui: ReactElement, options?: Omit<RenderOptions, "wrapper">) {
   });
 }
 
+function renderWithUser(
+  ui: ReactElement,
+  options?: Omit<RenderOptions, "wrapper">,
+) {
+  return {
+    user: userEvent.setup(),
+    ...render(ui, options),
+  };
+}
+
 function renderHook<Result, Props>(
   render: (initialProps: Props) => Result,
   options?: Omit<RenderHookOptions<Props>, "wrapper">,
@@ -37,4 +48,4 @@ function renderHook<Result, Props>(
   });
 }
 
-export { act, render, renderHook, screen };
+export { act, render, renderHook, renderWithUser, screen };

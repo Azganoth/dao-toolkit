@@ -32,7 +32,7 @@ export interface SettingsStore {
   setOverridePath: (path: SettingsStore["overridePath"]) => void;
   setReduceMotion: (value: boolean) => void;
 
-  reset: () => void;
+  reset: () => Promise<void>;
   init: () => Promise<void>;
 }
 

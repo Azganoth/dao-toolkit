@@ -1,11 +1,13 @@
 pub mod consts;
 pub mod io;
 pub mod models;
+pub mod session;
 
 use std::path::Path;
 
 use anyhow::Result;
 pub use models::*;
+pub use session::*;
 
 impl Chargen {
     pub fn vanilla() -> Self {

@@ -21,7 +21,7 @@ function getCustomResourceNames(data: ChargenData) {
 
 function useChargenStaleExclusions({ data }: { data?: ChargenData }) {
   const excludedResources = useExcludedResources();
-  const { excludeResources } = useResourceExclusionActions();
+  const { includeResources } = useResourceExclusionActions();
 
   const staleDisabledResources = useMemo(() => {
     if (!data) return [];
@@ -32,23 +32,23 @@ function useChargenStaleExclusions({ data }: { data?: ChargenData }) {
 
   const removeStaleExclusion = useCallback(
     (name: string) => {
-      excludeResources(name);
+      includeResources(name);
       toast.success("Saved exclusion removed", {
         description: name,
       });
     },
-    [excludeResources],
+    [includeResources],
   );
 
   const clearStaleExclusions = useCallback(() => {
     if (staleDisabledResources.length === 0) return;
 
     const count = staleDisabledResources.length;
-    excludeResources(...staleDisabledResources);
+    includeResources(...staleDisabledResources);
     toast.success("Stale exclusions cleared", {
       description: `Removed ${count} saved ${pluralize(count, "exclusion")} not found in this scan.`,
     });
-  }, [staleDisabledResources, excludeResources]);
+  }, [staleDisabledResources, includeResources]);
 
   return {
     staleDisabledResources,

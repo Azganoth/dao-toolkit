@@ -432,3 +432,92 @@ impl Mergeable for Chargen {
         self.textures.merge(&other.textures);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resource_identity_is_name_only() {
+        let mut resources = IndexSet::new();
+
+        assert!(resources.insert(Resource {
+            name: "hm_cps_shared.mop".to_string(),
+            path: Some("First Mod/hm_cps_shared.mop".to_string()),
+        }));
+        assert!(!resources.insert(Resource {
+            name: "hm_cps_shared.mop".to_string(),
+            path: Some("Second Mod/hm_cps_shared.mop".to_string()),
+        }));
+
+        assert_eq!(resources.len(), 1);
+        assert_eq!(
+            resources
+                .iter()
+                .next()
+                .and_then(|resource| resource.path.as_deref()),
+            Some("First Mod/hm_cps_shared.mop")
+        );
+    }
+
+    #[test]
+    fn hair_resource_identity_includes_cut() {
+        let mut resources = IndexSet::new();
+
+        assert!(resources.insert(HairResource {
+            name: "hf_har_custom_0".to_string(),
+            cut: "1".to_string(),
+            path: None,
+        }));
+        assert!(resources.insert(HairResource {
+            name: "hf_har_custom_0".to_string(),
+            cut: "2".to_string(),
+            path: None,
+        }));
+        assert!(!resources.insert(HairResource {
+            name: "hf_har_custom_0".to_string(),
+            cut: "1".to_string(),
+            path: Some("Duplicate/hf_har_custom_0.mmh".to_string()),
+        }));
+
+        assert_eq!(resources.len(), 2);
+    }
+
+    #[test]
+    fn merge_preserves_existing_order_and_appends_new_resources() {
+        let mut first = IndexSet::new();
+        first.insert(Resource::from("first.mop"));
+        first.insert(Resource::from("shared.mop"));
+
+        let mut second = IndexSet::new();
+        second.insert(Resource::from("shared.mop"));
+        second.insert(Resource::from("second.mop"));
+
+        first.merge(&second);
+
+        let names = first
+            .iter()
+            .map(|resource| resource.name.as_str())
+            .collect::<Vec<_>>();
+
+        assert_eq!(names, ["first.mop", "shared.mop", "second.mop"]);
+    }
+
+    #[test]
+    fn chargen_data_keeps_custom_manifest_separate_from_total_counts() {
+        let mut vanilla = Chargen::default();
+        vanilla
+            .heads
+            .hm
+            .insert(Resource::from("hm_cps_vanilla.mop"));
+
+        let mut custom = Chargen::default();
+        custom.heads.hm.insert(Resource::from("hm_cps_custom.mop"));
+
+        let data = ChargenData::from_chargens(&vanilla, &custom);
+
+        assert_eq!(data.heads.hm.total, 2);
+        assert_eq!(data.heads.hm.custom.len(), 1);
+        assert_eq!(data.heads.hm.custom[0].name, "hm_cps_custom.mop");
+    }
+}
