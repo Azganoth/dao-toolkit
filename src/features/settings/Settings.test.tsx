@@ -5,7 +5,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useDataStore } from "@/stores/data";
 import { useSettingsStore } from "@/stores/settings";
-import { TEST_OVERRIDE_PATH } from "@/test/utils/constants";
+import {
+  TEST_CONFLICTS_PATH,
+  TEST_OVERRIDE_PATH,
+} from "@/test/utils/constants";
 import { renderWithUser, screen } from "@/test/utils/react";
 import { resetDataStore, setDefaultSettings } from "@/test/utils/stores";
 
@@ -23,7 +26,7 @@ describe("Settings", () => {
 
     const { user } = renderWithUser(<Settings />);
 
-    await user.click(screen.getByRole("button", { name: "Browse" }));
+    await user.click(screen.getAllByRole("button", { name: "Browse" })[0]);
 
     expect(open).toHaveBeenCalledWith({
       defaultPath: TEST_OVERRIDE_PATH,
@@ -32,6 +35,23 @@ describe("Settings", () => {
     expect(useSettingsStore.getState().overridePath).toBe("E:/DAO/override");
     expect(screen.getByLabelText("Override Directory")).toHaveValue(
       "E:/DAO/override",
+    );
+  });
+
+  it("selects a conflicts scan folder through the Tauri folder picker", async () => {
+    vi.mocked(open).mockResolvedValue("E:/DAO");
+
+    const { user } = renderWithUser(<Settings />);
+
+    await user.click(screen.getAllByRole("button", { name: "Browse" })[1]);
+
+    expect(open).toHaveBeenCalledWith({
+      defaultPath: TEST_CONFLICTS_PATH,
+      directory: true,
+    });
+    expect(useSettingsStore.getState().conflictsPath).toBe("E:/DAO");
+    expect(screen.getByLabelText("Dragon Age Documents Directory")).toHaveValue(
+      "E:/DAO",
     );
   });
 
@@ -70,6 +90,7 @@ describe("Settings", () => {
   it("confirms before resetting settings", async () => {
     useSettingsStore.setState({
       overridePath: "E:/custom/override",
+      conflictsPath: "E:/DAO",
       reduceMotion: true,
       theme: "dark",
     });
@@ -85,6 +106,7 @@ describe("Settings", () => {
 
     await waitFor(() => {
       expect(useSettingsStore.getState()).toMatchObject({
+        conflictsPath: "C:/Users/Test/Documents/BioWare/Dragon Age",
         overridePath:
           "C:/Users/Test/Documents/BioWare/Dragon Age/packages/core/override",
         reduceMotion: false,

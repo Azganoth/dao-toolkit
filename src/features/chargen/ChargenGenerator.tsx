@@ -1,3 +1,4 @@
+import { ScanMetadataStrip } from "@/components/composites/ScanMetadataStrip";
 import { Button } from "@/components/ui/Button";
 import {
   Dialog,
@@ -44,30 +45,10 @@ import {
   Wand2Icon,
 } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ChargenStaleExclusions } from "./components/ChargenStaleExclusions";
 import { ChargenSummary } from "./components/ChargenSummary";
-
-function formatScanTimestamp(date: Date) {
-  const now = new Date();
-  const time = date.toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
-  if (date.toDateString() === now.toDateString()) {
-    return time;
-  }
-
-  const datePart = date.toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
-  });
-
-  return `${datePart}, ${time}`;
-}
 
 const revealResults: Variants = {
   hidden: {
@@ -217,6 +198,12 @@ function ChargenGenerator() {
   } = useChargenStaleExclusions({ data: scan?.data });
 
   const isBusy = pendingAction !== null;
+  const additionalMetadata = useMemo(() => {
+    const itemCount = scan ? getCustomResourceCount(scan.data) : 0;
+    return [
+      `${itemCount.toLocaleString()} ${pluralize(itemCount, "custom resource")}`,
+    ];
+  }, [scan]);
 
   return (
     <div className="mx-auto flex max-w-300 flex-col pb-8">
@@ -299,10 +286,10 @@ function ChargenGenerator() {
             className="mt-6 flex flex-col gap-4"
           >
             <ChargenSummary data={scan.data} scanPath={scan.path} />
-            <ScanMetadata
+            <ScanMetadataStrip
               path={scan.path}
               scannedAt={scan.scannedAt}
-              customCount={getCustomResourceCount(scan.data)}
+              additionalMetadata={additionalMetadata}
             />
             <div className="mt-6 flex gap-4">
               {staleCount > 0 && (
@@ -400,38 +387,6 @@ function ChargenGenerator() {
         onRemove={removeStaleExclusion}
         onClearAll={clearStaleExclusions}
       />
-    </div>
-  );
-}
-
-interface ScanMetadataProps {
-  path: string;
-  scannedAt: string;
-  customCount: number;
-}
-
-function ScanMetadata({ path, scannedAt, customCount }: ScanMetadataProps) {
-  const scanTime = new Date(scannedAt);
-
-  return (
-    <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2 rounded-md bg-card px-3 py-2 text-sm font-semibold text-muted-foreground">
-      <span>Scanned at {formatScanTimestamp(scanTime)}</span>
-      <span aria-hidden="true">·</span>
-      <span>
-        {customCount.toLocaleString()}{" "}
-        {pluralize(customCount, "custom resource")}
-      </span>
-      <span aria-hidden="true">·</span>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="min-w-0 truncate font-mono">
-            {shortenPath(path)}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-md font-mono break-all">
-          {path}
-        </TooltipContent>
-      </Tooltip>
     </div>
   );
 }

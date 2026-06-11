@@ -46,6 +46,7 @@ pub fn run() {
             commands::generate_chargen_file,
             commands::clear_chargen_scan,
             commands::delete_all_chargen_files,
+            commands::scan_for_resource_conflicts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

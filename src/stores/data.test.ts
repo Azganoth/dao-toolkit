@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { createResourceConflictGroup } from "@/test/utils/conflicts";
 import { resetDataStore } from "@/test/utils/stores";
 import { useDataStore } from "./data";
 
@@ -93,5 +94,26 @@ describe("data store", () => {
         path: "03 content/kh creations/kh_hair",
       },
     ]);
+  });
+
+  it("stores and restores ignored conflicts conflicts", () => {
+    const group = createResourceConflictGroup();
+
+    useDataStore.getState().ignoreResourceConflict(group);
+    useDataStore.getState().ignoreResourceConflict(group);
+
+    expect(useDataStore.getState().ignoredResourceConflicts).toHaveLength(1);
+    expect(useDataStore.getState().ignoredResourceConflicts[0]).toMatchObject({
+      identityKey: "shared.utc",
+      name: "shared.utc",
+    });
+
+    useDataStore
+      .getState()
+      .restoreResourceConflict(
+        useDataStore.getState().ignoredResourceConflicts[0].id,
+      );
+
+    expect(useDataStore.getState().ignoredResourceConflicts).toEqual([]);
   });
 });

@@ -3,33 +3,15 @@ import { createTauriStore } from "@tauri-store/zustand";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-async function getDefaultOverridePath() {
-  try {
-    const docDir = await documentDir();
-    const defaultPath = await join(
-      docDir,
-      "BioWare",
-      "Dragon Age",
-      "packages",
-      "core",
-      "override",
-    );
-
-    return defaultPath;
-  } catch (e) {
-    console.error("Failed to get default override directory:", e);
-  }
-
-  return null;
-}
-
 export interface SettingsStore {
   theme: "light" | "dark" | "system";
   overridePath: string | null;
+  conflictsPath: string | null;
   reduceMotion: boolean;
 
   setTheme: (theme: SettingsStore["theme"]) => void;
   setOverridePath: (path: SettingsStore["overridePath"]) => void;
+  setConflictsPath: (path: SettingsStore["conflictsPath"]) => void;
   setReduceMotion: (value: boolean) => void;
 
   reset: () => Promise<void>;
@@ -40,6 +22,7 @@ export const useSettingsStore = create<SettingsStore>()(
   immer((set, get, store) => ({
     theme: "system",
     overridePath: null,
+    conflictsPath: null,
     reduceMotion: false,
 
     setTheme: (theme) =>
@@ -50,31 +33,41 @@ export const useSettingsStore = create<SettingsStore>()(
       set((state) => {
         state.overridePath = path;
       }),
+    setConflictsPath: (path) =>
+      set((state) => {
+        state.conflictsPath = path;
+      }),
     setReduceMotion: (value) =>
       set((state) => {
         state.reduceMotion = value;
       }),
 
     reset: async () => {
-      const defaultPath = await getDefaultOverridePath();
+      const defaultDragonAgePath = await getDefaultDragonAgePath();
+      const defaultOverridePath = defaultDragonAgePath
+        ? await getDefaultOverridePath(defaultDragonAgePath)
+        : null;
 
       set(() => {
-        const initialState = store.getInitialState();
-        if (defaultPath) {
-          initialState.overridePath = defaultPath;
-        }
-
-        return initialState;
+        return {
+          ...store.getInitialState(),
+          overridePath: defaultOverridePath,
+          conflictsPath: defaultDragonAgePath,
+        };
       });
     },
     init: async () => {
-      if (get().overridePath) {
+      if (get().overridePath && get().conflictsPath) {
         return;
       }
 
-      const defaultPath = await getDefaultOverridePath();
+      const defaultDragonAgePath = await getDefaultDragonAgePath();
+      const defaultOverridePath = defaultDragonAgePath
+        ? await getDefaultOverridePath(defaultDragonAgePath)
+        : null;
       set((state) => {
-        state.overridePath = defaultPath;
+        state.overridePath ??= defaultOverridePath;
+        state.conflictsPath ??= defaultDragonAgePath;
       });
     },
   })),
@@ -87,3 +80,22 @@ export const settingsStoreTauriHandler = createTauriStore(
     saveOnChange: true,
   },
 );
+
+async function getDefaultDragonAgePath() {
+  try {
+    const docDir = await documentDir();
+    return join(docDir, "BioWare", "Dragon Age");
+  } catch (e) {
+    console.error("Failed to get default Dragon Age directory:", e);
+  }
+
+  return null;
+}
+
+async function getDefaultOverridePath(defaultDragonAgePath: string | null) {
+  if (!defaultDragonAgePath) {
+    return null;
+  }
+
+  return join(defaultDragonAgePath, "packages", "core", "override");
+}

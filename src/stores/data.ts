@@ -3,6 +3,8 @@ import {
   createModGroupRule,
   type ModGroupRule,
 } from "@/features/chargen/resourceMods";
+import { createIgnoredResourceConflict } from "@/features/conflicts/utils";
+import type { ResourceConflictGroup, IgnoredResourceConflict } from "@/types/conflicts";
 import { useMemo } from "react";
 import { create, type StateCreator } from "zustand";
 import { immer } from "zustand/middleware/immer";
@@ -18,11 +20,17 @@ interface ChargenDataSlice {
   removeModGroupRule: (path: string) => void;
 }
 
+interface ConflictsDataSlice {
+  ignoredResourceConflicts: IgnoredResourceConflict[];
+  ignoreResourceConflict: (group: ResourceConflictGroup) => void;
+  restoreResourceConflict: (id: string) => void;
+}
+
 interface SharedSlice {
   reset: () => void;
 }
 
-type Data = SharedSlice & ChargenDataSlice;
+type Data = SharedSlice & ChargenDataSlice & ConflictsDataSlice;
 
 const EMPTY_MOD_GROUP_RULES: ModGroupRule[] = [];
 
@@ -89,9 +97,41 @@ const createSharedSlice: StateCreator<Data, [], [], SharedSlice> = (
   reset: () => set(() => store.getInitialState()),
 });
 
+const createConflictsSlice: StateCreator<
+  Data,
+  [["zustand/immer", never]],
+  [],
+  ConflictsDataSlice
+> = (set) => ({
+  ignoredResourceConflicts: [],
+  ignoreResourceConflict: (group) =>
+    set((state) => {
+      const ignored = createIgnoredResourceConflict(group);
+      const conflicts = state.ignoredResourceConflicts ?? [];
+      const index = conflicts.findIndex(
+        (conflict) => conflict.id === ignored.id,
+      );
+
+      if (index === -1) {
+        state.ignoredResourceConflicts = [...conflicts, ignored].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        );
+      } else {
+        state.ignoredResourceConflicts[index] = ignored;
+      }
+    }),
+  restoreResourceConflict: (id) =>
+    set((state) => {
+      state.ignoredResourceConflicts = (
+        state.ignoredResourceConflicts ?? []
+      ).filter((conflict) => conflict.id !== id);
+    }),
+});
+
 export const useDataStore = create<Data>()(
   immer((...args) => ({
     ...createChargenSlice(...args),
+    ...createConflictsSlice(...args),
     ...createSharedSlice(...args),
   })),
 );
@@ -132,6 +172,19 @@ export function useModGroupRuleActions() {
     useShallow((state) => ({
       upsertModGroupRule: state.upsertModGroupRule,
       removeModGroupRule: state.removeModGroupRule,
+    })),
+  );
+}
+
+export function useIgnoredResourceConflicts() {
+  return useDataStore((state) => state.ignoredResourceConflicts ?? []);
+}
+
+export function useResourceConflictActions() {
+  return useDataStore(
+    useShallow((state) => ({
+      ignoreResourceConflict: state.ignoreResourceConflict,
+      restoreResourceConflict: state.restoreResourceConflict,
     })),
   );
 }

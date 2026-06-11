@@ -1,26 +1,24 @@
-import { type ChargenScanResult } from "@/types/chargen";
+import type { ConflictScanResult } from "@/types/conflicts";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-export interface ChargenScan extends ChargenScanResult {
-  requestedPath: string;
+export interface ConflictScan extends ConflictScanResult {
   scannedAt: string;
 }
 
-interface ChargenStore {
-  scan: ChargenScan | null;
-  setScan: (result: ChargenScanResult, requestedPath: string) => void;
+interface ConflictsStore {
+  scan: ConflictScan | null;
+  setScan: (result: ConflictScanResult) => void;
   reset: () => void;
 }
 
-export const useChargenStore = create<ChargenStore>()(
+export const useConflictsStore = create<ConflictsStore>()(
   immer((set) => ({
     scan: null,
-    setScan: (result, requestedPath) =>
+    setScan: (result) =>
       set((state) => {
         state.scan = {
           ...result,
-          requestedPath,
           scannedAt: new Date().toISOString(),
         };
       }),

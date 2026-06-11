@@ -69,8 +69,10 @@ const revealItem: Variants = {
 function Settings() {
   const overridePath = useSettingsStore((state) => state.overridePath);
   const setOverridePath = useSettingsStore((state) => state.setOverridePath);
+  const conflictsPath = useSettingsStore((state) => state.conflictsPath);
+  const setConflictsPath = useSettingsStore((state) => state.setConflictsPath);
 
-  const selectFolder = async () => {
+  const selectOverrideFolder = async () => {
     const path = await open({
       directory: true,
       defaultPath: overridePath ?? undefined,
@@ -78,6 +80,16 @@ function Settings() {
     if (!path) return;
 
     setOverridePath(path);
+  };
+
+  const selectConflictsFolder = async () => {
+    const path = await open({
+      directory: true,
+      defaultPath: conflictsPath ?? undefined,
+    });
+    if (!path) return;
+
+    setConflictsPath(path);
   };
 
   // Appearance
@@ -136,7 +148,7 @@ function Settings() {
               Override Directory
             </FieldLabel>
             <FieldDescription>
-              The location where your Dragon Age: Origins mods are installed.
+              The override folder used by chargen scanning and XML generation.
             </FieldDescription>
           </FieldContent>
           <InputGroup className="mt-2 h-10">
@@ -144,11 +156,39 @@ function Settings() {
               id="settings-override-path"
               type="text"
               value={overridePath ?? ""}
+              readOnly
               placeholder="Select your Dragon Age override folder..."
               className="font-mono"
             />
             <InputGroupAddon align="inline-end">
-              <InputGroupButton onClick={selectFolder}>
+              <InputGroupButton onClick={selectOverrideFolder}>
+                <FolderOpenIcon className="size-4" />
+                Browse
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+        </Field>
+        <Field>
+          <FieldContent>
+            <FieldLabel htmlFor="settings-conflicts-path">
+              Dragon Age Documents Directory
+            </FieldLabel>
+            <FieldDescription>
+              The broader folder used by Conflicts to compare loose override
+              files and archives.
+            </FieldDescription>
+          </FieldContent>
+          <InputGroup className="mt-2 h-10">
+            <InputGroupInput
+              id="settings-conflicts-path"
+              type="text"
+              value={conflictsPath ?? ""}
+              readOnly
+              placeholder="Select your Dragon Age documents folder..."
+              className="font-mono"
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton onClick={selectConflictsFolder}>
                 <FolderOpenIcon className="size-4" />
                 Browse
               </InputGroupButton>
@@ -297,7 +337,7 @@ function Settings() {
             <FieldLabel>Clear Application Data</FieldLabel>
             <FieldDescription>
               Permanently remove saved exclusions, grouping preferences, and
-              temporary scan data.
+              ignored conflict groups.
             </FieldDescription>
           </FieldContent>
           <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -312,8 +352,8 @@ function Settings() {
                 <DialogTitle>Clear all application data?</DialogTitle>
                 <DialogDescription>
                   This will remove saved exclusions, grouping preferences, and
-                  scanned asset data from the application cache. You will need
-                  to rescan your folders.
+                  ignored conflict groups from the application cache. You will
+                  need to rescan your folders.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>

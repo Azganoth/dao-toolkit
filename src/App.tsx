@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/ScrollArea";
 import { Toaster } from "@/components/ui/Sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { ChargenGenerator } from "@/features/chargen/ChargenGenerator";
+import { Conflicts } from "@/features/conflicts/Conflicts";
 import { Settings } from "@/features/settings/Settings";
 import { dataStoreTauriHandler } from "@/stores/data";
 import {
@@ -15,7 +16,7 @@ import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import { setTheme as tauriSetTheme } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { SettingsIcon, UserCheckIcon } from "lucide-react";
+import { SearchIcon, SettingsIcon, UserCheckIcon } from "lucide-react";
 import { useEffect } from "react";
 
 const updateTheme = async (theme: SettingsStore["theme"]) => {
@@ -62,6 +63,10 @@ function App() {
               <UserCheckIcon className="size-5" />
               Chargen
             </TabsTrigger>
+            <TabsTrigger value="conflicts">
+              <SearchIcon className="size-5" />
+              Conflicts
+            </TabsTrigger>
             <TabsTrigger value="settings" className="ml-auto">
               <SettingsIcon className="size-5" />
               Settings
@@ -70,6 +75,9 @@ function App() {
           <ScrollArea className="h-full w-full overflow-hidden px-4 pb-4">
             <TabsContent value="chargen">
               <ChargenGenerator />
+            </TabsContent>
+            <TabsContent value="conflicts">
+              <Conflicts />
             </TabsContent>
             <TabsContent value="settings">
               <Settings />

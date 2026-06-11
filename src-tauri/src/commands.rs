@@ -3,7 +3,10 @@ use std::path::Path;
 use tauri::State;
 
 use crate::{
-    core::chargen::{Chargen, ChargenScanResult},
+    core::{
+        chargen::{Chargen, ChargenScanResult},
+        conflicts::{scan_for_conflicts, ConflictScanResult},
+    },
     ChargenState,
 };
 
@@ -47,4 +50,9 @@ pub async fn generate_chargen_file(
 ) -> Result<(), String> {
     let context = state.0.lock().unwrap();
     context.generate(&scan_id, &path, disabled)
+}
+
+#[tauri::command]
+pub async fn scan_for_resource_conflicts(path: String) -> Result<ConflictScanResult, String> {
+    scan_for_conflicts(&path)
 }

@@ -13,6 +13,10 @@ vi.mock("@/features/settings/Settings", () => ({
   Settings: () => <section>Settings panel</section>,
 }));
 
+vi.mock("@/features/conflicts/Conflicts", () => ({
+  Conflicts: () => <section>Conflicts panel</section>,
+}));
+
 import { setTheme } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -48,10 +52,14 @@ describe("App", () => {
     expect(document.documentElement).toHaveClass("dark");
   });
 
-  it("renders the chargen tab first and can switch to settings", async () => {
+  it("renders the chargen tab first and can switch to conflicts and settings", async () => {
     const { user } = renderWithUser(<App />);
 
     expect(screen.getByText("Chargen panel")).toBeVisible();
+
+    await user.click(screen.getByRole("tab", { name: "Conflicts" }));
+
+    expect(screen.getByText("Conflicts panel")).toBeVisible();
 
     await user.click(screen.getByRole("tab", { name: "Settings" }));
 
